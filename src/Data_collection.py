@@ -66,7 +66,7 @@ class Listener():
         
 if __name__ == "__main__":
     test = Listener()
-    test.set_activity("deleteme")
+    test.set_activity("move")
     test.set_sample_size(40)
     limiter = 0
     while limiter!=test.samples:

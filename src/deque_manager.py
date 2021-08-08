@@ -5,7 +5,7 @@ from Mqtt_manager import Mqtt_Manager
 import collections
 
 
-model = load_model("trained_models/still_wave.h5")
+model = load_model("trained_models/new_data_motion.h5")
 accelemeter_conn = Mqtt_Manager(
     "localhost", "accelerometer_LSM303AGR")
 gyro_conn = Mqtt_Manager("localhost", "gyroscope_LSM6DSL")
@@ -31,10 +31,10 @@ while True:
     sleep(0.2)
     if deque_manager(accelemeter_conn, 2):
         new_data = [deque_manager(gyro_conn, 41) + deque_manager(accelemeter_conn, 41)]
-        model.summary()
+        # model.summary()
         y_new = model.predict_classes(new_data)
         print(y_new)
-        # if y_new[0]==0:
-        #     print("wave")
-        # else:
-        #     print("still")
+        if y_new[0]==0:
+            print("move")
+        else:
+            print("still")

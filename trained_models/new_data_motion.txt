@@ -1,0 +1,3 @@
+
+The loss value is: 6.120865 
+The accuracy value is: 0.666667 
