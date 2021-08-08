@@ -37,12 +37,14 @@ if __name__ == "__main__":
         if test.deque_manager(accelemeter_conn, 2):
             new_data = [test.deque_manager(gyro_conn, 41) + test.deque_manager(accelemeter_conn, 41)]
             # model.summary()
-            y_new = test.model.predict_classes(new_data)
-            print(y_new)
-            if y_new[0]==0:
-                print("move")
-            else:
-                print("still")
+            predicted_classes = test.model.predict_classes(new_data)
+            print(f"predicted classes {predicted_classes}")
+            predicted_prob = test.model.predict_proba(new_data)
+            print(f"predict probs {predicted_prob}")
+            # if y_new[0]==0:
+            #     print("move")
+            # else:
+            #     print("still")
 
 # model = load_model("trained_models/new_data_motion.h5")
 # accelemeter_conn = Mqtt_Manager(

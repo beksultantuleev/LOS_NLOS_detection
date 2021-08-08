@@ -82,16 +82,16 @@ class Model_manager():
         self.train_shape = self.train_data.shape[1]
 
     def start_training(self, input_nodes, output_nodes):
+
         self.model.add(Dense(input_nodes, input_shape=(
             self.train_shape,), name='input_layer'))
         self.model.add(Dense(64, activation='relu', name='hidden1'))
         self.model.add(Dense(32, activation='relu', name='hidden2'))
-
         self.model.add(
             Dense(output_nodes, activation='softmax', name='output_layer'))
 
         self.model.compile(
-            optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+            optimizer='adam', loss='binary_crossentropy', metrics=['accuracy']) #"binary_crossentropy" categorical_crossentropy
         self.model.summary()
 
         self.model.fit(self.train_data, self.train_labels, epochs=self.epoch_number,
@@ -117,7 +117,7 @@ class Model_manager():
 
 
 if __name__ == "__main__":
-    test = Model_manager(validation_ratio = 0.3, epoch_number = 30, batch_number = 8)
+    test = Model_manager(validation_ratio = 0.3, epoch_number = 200, batch_number = 16)
     test.dataset_configuration(location="data/new_data_motion_test.csv")
-    test.start_training(240, 2)
+    test.start_training(120, 2)
     test.save_model("new_data_motion")
