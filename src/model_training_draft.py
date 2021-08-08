@@ -77,9 +77,10 @@ test_labels = labels[shuffled_indexes[:data_split_tuner_value],:]
 
 # print(train_data)
 # print(f"train {dtensor[sample_index[1:],:]}")
-# print(dtensor[7])
+print(list(dtensor[7]))
+# print(labels)
 # print(f"test {sample_index[1:]}")
-print(list(test_data[0]))
+# print(list(test_data[0]))
 
 train_shape = train_data.shape[1]
 # print(train_shape)
