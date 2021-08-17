@@ -66,11 +66,17 @@ class Listener():
         
 if __name__ == "__main__":
     test = Listener()
-    test.set_activity("move")
-    test.set_sample_size(40)
+    # accelemeter_conn = Mqtt_Manager(
+    #         "localhost", "accelerometer_LSM303AGR")
+    # while True:
+    #     if accelemeter_conn.processed_data:
+    #         sleep(0.3)
+    #         print(accelemeter_conn.processed_data)
+    test.set_activity("dance")
+    test.set_sample_size(10)
     limiter = 0
     while limiter!=test.samples:
-        sleep(0.1)
+        sleep(0.3)
         test.accelerom_data_collection()
         test.gyro_data_collection()
         limiter = len(test.acc_data)

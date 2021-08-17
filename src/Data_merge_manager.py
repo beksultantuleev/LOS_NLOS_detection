@@ -26,5 +26,5 @@ class Data_merge_manager():
 
 if __name__=="__main__":
     test = Data_merge_manager()
-    test.set_name("new_data_motion_test")
+    test.set_name("short_data_motion_test")
     test.create_final_df()
