@@ -13,6 +13,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 import sklearn.metrics as metrics
 from sklearn.svm import SVC
+import joblib
 
 
 class Model_manager():
@@ -56,8 +57,9 @@ class Model_manager():
             self.X, self.Y, test_size=0.2)
         # print(len(self.X.columns))
         # print(self.X)
+        
 
-    def logistic_reg(self):
+    def logistic_reg(self, set_name = "logistic_reg_default"):
 
         logistic_classifier = LogisticRegression(solver='liblinear')
         logistic_classifier.fit(self.x_train, self.y_train.values.ravel())
@@ -65,6 +67,8 @@ class Model_manager():
         cm = metrics.confusion_matrix(self.y_test, y_pred_logistic)
         print(cm)
         # print(self.value_codes)
+        filename = f'trained_models/{set_name}.sav'
+        joblib.dump(logistic_classifier, filename)
 
     def SVM(self):
 
@@ -101,6 +105,8 @@ class Model_manager():
         cm = metrics.confusion_matrix(
             self.y_test, y_pred_custom_binary_nn)
         print(cm)
+        self.model.save(f'trained_models/{name}.h5')
+        print(f'SAVED to trained_models/{name}.h5')
     
     
     # def custom_binary_nn(self):
@@ -132,10 +138,11 @@ if __name__ == "__main__":
 
     # test.dataset_configuration(datapath="data/short_data_motion_test.csv", list_of_independent_vars=['acc_x', 'acc_y', 'acc_z', 'gyr_x', 'gyr_y', 'gyr_z'], target='activity')
     test.dataset_configuration(datapath="data/firstLosNlos.csv", list_of_independent_vars=["CIR", "FirstPathPL", "maxNoise", "RX_level", "FPPL"], target='activity')
-    
+    print(test.value_codes)
     # test.custom_binary_nn()
-    test.binary_nn(epoch=10)
+    # test.binary_nn(epoch=10)
+
     # test.save_custom_binary_nn("binary_nn")
 
-    # test.logistic_reg()
+    # test.logistic_reg(set_name='logistic_regression')
     # test.SVM()

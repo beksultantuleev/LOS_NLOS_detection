@@ -48,7 +48,7 @@ class Listener():
 
     def saveData(self):
         all_in_one_dataframe = pd.DataFrame(self.data, columns=[
-                                            "CIR", "FirstPathPL", "maxNoise", "RX_level", "FPPL", "Distance"])
+                                            "CIR", "FirstPathPL", "maxNoise", "RX_level", "FPPL"]) #'Distance'
         # gyro_dataframe= pd.DataFrame(self.gyro_data, columns=["gyr_x","gyr_y", "gyr_z"])
 
         # imu_dataframe = pd.concat([all_in_one_dataframe, gyro_dataframe], axis=1)
