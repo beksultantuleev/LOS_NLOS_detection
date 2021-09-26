@@ -20,7 +20,7 @@ class Data_merge_manager():
                 data.insert(0, 'acquisition', id)
                 self.dataframe = pd.concat([self.dataframe, data], ignore_index=True)
                 
-                self.dataframe = self.dataframe.drop(["Unnamed: 0"], axis=1)
+                # self.dataframe = self.dataframe.drop(["Unnamed: 0"], axis=1) #if no index after saving file
                 self.dataframe.to_csv(f"data/{self.name}.csv")
                 id+=1
 

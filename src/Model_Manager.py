@@ -31,8 +31,8 @@ class Model_manager():
         for acq_index in range(1, max(np.unique(dataset[acquisition]))+1):
             temp = dataset[dataset[acquisition] == acq_index]
             Y_list_labels = np.append(Y_list_labels, np.unique(temp[target]))
-        dataset = dataset.drop(
-            [target, 'Unnamed: 0'], axis=1)
+        # dataset = dataset.drop(
+        #     [target, 'Unnamed: 0'], axis=1) #if no inder after merge
         dataset['idx'] = dataset.groupby(acquisition).cumcount()
 
         final_dataframe = dataset.pivot_table(index=acquisition, columns='idx')[

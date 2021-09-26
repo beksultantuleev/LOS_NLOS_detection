@@ -22,7 +22,7 @@ class Listener():
         # self.magnetometer_conn = Mqtt_Manager(
         #     "localhost", "magnetometer_LSM303AGR")
 
-        self.data = np.empty(shape=(0, 6))
+        self.data = np.empty(shape=(0, 5))
         # self.gyro_data = np.empty(shape=(0, 3))
         # self.magnetom_data = np.empty(shape=(0, 3))
 
@@ -61,7 +61,7 @@ class Listener():
                 if data_name in f:
                     counter += 1
         all_in_one_dataframe.to_csv(
-            f"data/raw/data_ss{self.samples}_{self.activity}_{counter}.txt")
+            f"data/raw/data_ss{self.samples}_{self.activity}_{counter}.txt", index=None)
         print(
             f"Saved!\n data/raw/data_ss{self.samples}_{self.activity}_{counter}.txt")
 
@@ -75,10 +75,10 @@ if __name__ == "__main__":
     #         sleep(0.3)
     #         print(accelemeter_conn.processed_data)
     test.set_activity("NLOS")
-    test.set_sample_size(50)
+    test.set_sample_size(50000)
     limiter = 0
     while limiter != test.samples:
-        sleep(0.1)
+        sleep(0.01)
         test.all_data_collection()
         # test.gyro_data_collection()
         limiter = len(test.data)

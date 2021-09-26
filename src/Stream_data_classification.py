@@ -63,7 +63,7 @@ class Stream_data_classification():
                 if use_window_classification:
                     if window_counter == sample_size:
                         predicted_classes = np.argmax(test.model.predict(new_data), axis=-1)
-                # print(f"predicted classes window {predicted_classes} ")
+
                         print(f"predicted classes window {predicted_classes} ")
                         window_counter = 0
                 else:
