@@ -11,7 +11,7 @@ import joblib
 
 "kmeans + pca"
 
-data = pd.read_csv('data/raw/data_ss50000_NLOS_1.txt')
+data = pd.read_csv('data/los_nlos_cluster_dataa.txt')
 data = data.drop(["activity"], axis=1)
 
 scaler = StandardScaler()
@@ -24,7 +24,7 @@ pca = PCA(n_components=2)
 # df = pca.fit_transform(scaled_data)
 df = pca.fit_transform(data)
 # print(df)
-joblib.dump(pca, 'trained_models/pca.sav')
+# joblib.dump(pca, 'trained_models/pca.sav')
 
 'k means'
 kmeans = KMeans(n_clusters= 2)
@@ -32,13 +32,13 @@ kmeans.fit(df)
 label = kmeans.predict(df)
 
 "save model"
-joblib.dump(kmeans, 'trained_models/k_means.sav')
+# joblib.dump(kmeans, 'trained_models/k_means.sav')
 
 "custom data testing"
 # label = kmeans.predict([df[0]]) #df[:1,:]
 # print(label)
 # print(df[:1,:])
-
+print(f"df is here {df}")
 
 # print(label[:20])
 "plotting"
