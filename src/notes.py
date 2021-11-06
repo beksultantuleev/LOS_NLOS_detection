@@ -7,10 +7,22 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 
-li = np.array([1,2,3])
-li2 = np.array([4,5,6])
-li_concat = np.concatenate((li, li2), axis=0)
-print(li_concat)
-if li_concat.size!=0:
-    print("yes")
+data = pd.read_csv('data/los_nlos_cluster_dataa.txt')
+
+
+def activity_modifier(number_of_activity, length_of_activity):
+    if number_of_activity == 1:
+        return [1]*length_of_activity
+    lis = []
+    for i in range(length_of_activity):
+        lis.append(i)
+    lis = sorted(lis*number_of_activity)[:length_of_activity]
+    return lis
+
+number_of_activity = 2
+length_of_activity = data.shape[0]
+actv = activity_modifier(number_of_activity, length_of_activity)
+data["activity"] = actv
+print(data)
+
 
