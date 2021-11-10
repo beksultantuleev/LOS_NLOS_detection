@@ -15,6 +15,7 @@ import sklearn.metrics as metrics
 from sklearn.svm import SVC
 import joblib
 
+'probably i dont need it too'
 
 class Model_manager():
     def __init__(self, validation_ratio=0.2, epoch_number=50, batch_number=8):
