@@ -21,12 +21,14 @@ nlos_data["Class"] = 0
 # print(nlos_data.head())
 dataframe = pd.concat([nlos_data, los_data], ignore_index=True)
 num_of_features = 4
+
 "scaling data"
-class_ = dataframe['Class']
-scaler = StandardScaler()
-scaler.fit(dataframe.iloc[:, :-1])
-dataframe = pd.DataFrame(scaler.transform(dataframe.iloc[:, :-1]), columns=list(dataframe.iloc[:, :-1].columns))
-dataframe['Class'] = class_
+'note! use scaling for training set only to avoid data leakage'
+# class_ = dataframe['Class']
+# scaler = StandardScaler()
+# scaler.fit(dataframe.iloc[:, :-1])
+# dataframe = pd.DataFrame(scaler.transform(dataframe.iloc[:, :-1]), columns=list(dataframe.iloc[:, :-1].columns))
+# dataframe['Class'] = class_
 "<<<<"
 # print(df)
 # dataframe = pd.read_csv('data/ecg.csv', header=None)
@@ -45,11 +47,14 @@ x_train, x_test, y_train, y_test = train_test_split(
     data, labels, test_size=0.2)
 
 
+
+"scaling here by tensorflow"
 min_val = tf.reduce_min(x_train)
 max_val = tf.reduce_max(x_train)
 
 x_train = (x_train - min_val) / (max_val - min_val)
 x_test = (x_test - min_val) / (max_val - min_val)
+
 
 x_train = tf.cast(x_train, tf.float32)
 x_test = tf.cast(x_test, tf.float32)
@@ -88,6 +93,7 @@ class AnomalyDetector(Model):
             layers.Dense(8, activation="relu")])
 
         self.decoder = tf.keras.Sequential([
+            # layers.Dense(8, activation="relu"),
             layers.Dense(16, activation="relu"),
             layers.Dense(32, activation="relu"),
             layers.Dense(num_of_features, activation="sigmoid")])
@@ -103,11 +109,13 @@ autoencoder = AnomalyDetector()
 autoencoder.compile(optimizer='adam', loss='mae')
 
 history = autoencoder.fit(normal_train_data, normal_train_data,
-                          epochs=20,
-                          batch_size=512,
+                          epochs=30,
+                          batch_size=1024,
                           validation_data=(x_test, x_test),
                           shuffle=True)
 
+'save the model'
+autoencoder.save('trained_models/anomaly_detection_model')
 
 plt.plot(history.history["loss"], label="Training Loss")
 plt.plot(history.history["val_loss"], label="Validation Loss")
@@ -176,3 +184,6 @@ def print_stats(predictions, labels):
 
 preds = predict(autoencoder, x_test, threshold)
 print_stats(preds, y_test)
+
+print(x_test)
+print(f'Min val is {min_val} \nMax val is {max_val}')

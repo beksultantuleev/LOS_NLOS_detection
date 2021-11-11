@@ -38,6 +38,6 @@ list_of_independent_vars=["CIR", "FirstPathPL", "maxNoise", "RX_level", "FPPL"]
 
 # dataset_configuration(data, list_of_independent_vars).to_csv('data/los_nlos_cluster_by_acquisition_4.csv', index= None)
 
-print(list(data.columns))
+# print(list(data.columns))
 
 

@@ -64,6 +64,7 @@ decoded_data = autoencoder.decoder(encoded_data).numpy()
 print(f'shape of encoded is {encoded_data.shape}')
 print(encoded_data)
 # print(f'shape of decoded is {decoded_data.shape}')
+'save autoencoder model'
 # autoencoder.save('trained_models/autoencoder')
 
 'k means'
