@@ -21,7 +21,7 @@ def acquisition_modifier(acquisition_number, length_of_acquisitions):
     lis = sorted(lis*acquisition_number)[:length_of_acquisitions]
     return lis
 
-data['acquisition'] = acquisition_modifier(4, data.shape[0])
+# data['acquisition'] = acquisition_modifier(4, data.shape[0])
 # print(data)
 
 def dataset_configuration(dataset, list_of_independent_vars, acquisition="acquisition"):
@@ -40,5 +40,20 @@ list_of_independent_vars=["CIR", "FirstPathPL", "maxNoise", "RX_level", "FPPL"]
 
 # print(list(data.columns))
 
-"sets"
+import numpy as np
+import matplotlib.pyplot as plt
 
+plt.axis([0, 10, 0, 10])
+
+while True:
+
+    plt.text(5, 5, "eggs", size=50,
+         ha="center", va="center",
+         bbox=dict(boxstyle="round",
+                   ec=(1., 0.5, 0.5),
+                   fc=(1., 0.8, 0.8),
+                   )
+         )
+    plt.pause(0.05)
+
+plt.show()

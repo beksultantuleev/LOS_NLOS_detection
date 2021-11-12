@@ -57,16 +57,6 @@ class Mqtt_Manager:
         # print("published!")
         self.client.publish(topc, msg)
 
-# try:
-#     while True:
-#         time.sleep(2)
-#         # value = "from subs"
-#         # client.publish("my_publish_test", value)
-
-# except KeyboardInterrupt:
-#     print("exiting")
-#     client.disconnect()
-#     client.loop_stop()
 if __name__=="__main__":
     import keyboard
     test = Mqtt_Manager("localhost", "accelerometer_LSM303AGR") #accelerometer_LSM303AGR

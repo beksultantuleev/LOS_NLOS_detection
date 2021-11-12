@@ -10,18 +10,36 @@ from tensorflow.keras.datasets import fashion_mnist
 from tensorflow.keras.models import Model
 from sklearn.preprocessing import StandardScaler
 
+def dataset_configuration(dataset, list_of_independent_vars, acquisition="acquisition"):
+    for acq_index in range(1, max(np.unique(dataset[acquisition]))+1):
+        temp = dataset[dataset[acquisition] == acq_index]
+    dataset['idx'] = dataset.groupby(acquisition).cumcount()
+
+    final_dataframe = dataset.pivot_table(index=acquisition, columns='idx')[
+        list_of_independent_vars]
+    # print(final_dataframe)
+    return final_dataframe
+
+list_of_independent_vars=["CIR", "maxNoise", "RX_level", "FPPL"]
+
+
+
 los_data = pd.read_csv('data/LOS_2_ss25000_1.csv')
-los_data = los_data.drop(["acquisition", 'FirstPathPL'], axis=1)
+los_data = dataset_configuration(los_data, list_of_independent_vars)
+# los_data = los_data.drop(["acquisition", 'FirstPathPL'], axis=1)
 los_data["Class"] = 1
 
 nlos_data = pd.read_csv('data/NLOS_2_ss25000_1.csv')
-nlos_data = nlos_data.drop(["acquisition", 'FirstPathPL'], axis=1) #, 'FirstPathPL'
+nlos_data = dataset_configuration(nlos_data, list_of_independent_vars)
+
+# nlos_data = nlos_data.drop(["acquisition", 'FirstPathPL'], axis=1) #, 'FirstPathPL'
 nlos_data["Class"] = 0
 # print(los_data.head())
 # print(nlos_data.head())
 dataframe = pd.concat([nlos_data, los_data], ignore_index=True)
-num_of_features = 4
+num_of_features = 8
 
+print(dataframe)
 "scaling data"
 'note! use scaling for training set only to avoid data leakage'
 # class_ = dataframe['Class']
@@ -115,7 +133,7 @@ history = autoencoder.fit(normal_train_data, normal_train_data,
                           shuffle=True)
 
 'save the model'
-autoencoder.save('trained_models/anomaly_detection_model')
+autoencoder.save('trained_models/anomaly_detection_model_acquisition_2')
 
 plt.plot(history.history["loss"], label="Training Loss")
 plt.plot(history.history["val_loss"], label="Validation Loss")
@@ -185,5 +203,5 @@ def print_stats(predictions, labels):
 preds = predict(autoencoder, x_test, threshold)
 print_stats(preds, y_test)
 
-print(x_test)
+# print(x_test)
 print(f'Min val is {min_val} \nMax val is {max_val}')
