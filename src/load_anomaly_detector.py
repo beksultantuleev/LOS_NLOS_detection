@@ -14,16 +14,7 @@ from keras.models import load_model
 from Mqtt_manager import Mqtt_Manager
 import collections
 
-# los_data = pd.read_csv('data/LOS_2_ss25000_1.csv')
-# los_data = los_data.drop(["acquisition", 'FirstPathPL'], axis=1)
-# # los_data["Class"] = 1
 
-# nlos_data = pd.read_csv('data/NLOS_2_ss25000_1.csv')
-# nlos_data = nlos_data.drop(
-#     ["acquisition", 'FirstPathPL'], axis=1)  # , 'FirstPathPL'
-# # nlos_data["Class"] = 0
-# dataframe = pd.concat([nlos_data, los_data], ignore_index=True)
-# raw_data = dataframe.values
 # autoencoder = load_model('trained_models/anomaly_detection_model')
 autoencoder = load_model('trained_models/anomaly_detection_model_acquisition_2')
 
@@ -35,26 +26,24 @@ def predict(model, data, threshold):
 
 
 # threshold = 0.023342917
-threshold = 0.04187836
+threshold = 0.037871532 #acquisition 2
 min_val = -110.053703
 max_val = 3165.0
 
-# raw_data = (raw_data - min_val) / (max_val - min_val)
-# print(raw_data)
+# raw_data = (raw_data - min_val) / (max_val - min_val) #scaling formula
+
 
 data = Mqtt_Manager(
     "localhost", "allInOne")
 
-
-
 # print(autoencoder.summary())
+
 'with single data'
 # while True:
 #     if data.processed_data:
 #         real_data = (np.array(data.processed_data) -
 #                      min_val) / (max_val - min_val)
 #         preds = predict(autoencoder, [real_data], threshold)
-#         # print(np.array(preds)[0])
 #         print(preds)
 #         msg = [1] if np.array(preds)[0] else [0]
 #         data.publish("LOS", f'{msg}')
@@ -73,16 +62,22 @@ def deque_manager_idea(mqtt_data, size):
             return np.array(deque_test)
 
 acquisition_number = 2
+window_counter = 0
 while True:
     if data.processed_data:
+        window_counter+=1
         CIR = deque_manager_idea(data.processed_data[0], acquisition_number)
         maxNoise = deque_manager_idea(data.processed_data[1], acquisition_number)
         RX_level = deque_manager_idea(data.processed_data[2], acquisition_number)
         FPPL = deque_manager_idea(data.processed_data[3], acquisition_number)
-
         real_data = ((np.concatenate((CIR, maxNoise, RX_level, FPPL), axis=0)) - min_val) / (max_val - min_val)
         # print(real_data)
-        preds = predict(autoencoder, [real_data], threshold)
-        print(preds)
-        msg = [1] if np.array(preds)[0] else [0]
-        data.publish("LOS", f'{msg}')
+        'put here a window counter'
+        if window_counter == acquisition_number:
+            preds = predict(autoencoder, [real_data], threshold)
+            print(preds)
+            # print(real_data)
+            msg = [1] if np.array(preds)[0] else [0]
+            data.publish("LOS", f'{msg}')
+            window_counter = 0
+
