@@ -80,4 +80,5 @@ if not single_data:
                 msg = [1] if np.array(preds)[0] else [0]
                 data.publish("LOS", f'{msg}')
                 window_counter = 0
+                
 
