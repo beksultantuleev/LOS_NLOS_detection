@@ -8,29 +8,37 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
 
+'data analysis for selecting right variables'
 
 los_data = pd.read_csv('data/LOS_2_ss25000_1.csv')
-los_data = los_data.drop(["acquisition"], axis=1) #, 'FirstPathPL'
+los_data = los_data.drop(["acquisition", 'FirstPathPL'], axis=1) #, 'FirstPathPL'
+los_data["RX_difference"] = los_data['RX_level'] - los_data["FPPL"]
 los_data["Class"] = 1
 
 nlos_data = pd.read_csv('data/NLOS_2_ss25000_1.csv')
-nlos_data = nlos_data.drop(["acquisition"], axis=1)
+nlos_data = nlos_data.drop(["acquisition", 'FirstPathPL'], axis=1)
+nlos_data["RX_difference"] = nlos_data['RX_level'] - nlos_data["FPPL"]
 nlos_data["Class"] = 0
 # print(los_data.head())
 # print(nlos_data.head())
 dataframe = pd.concat([nlos_data, los_data], ignore_index=True)
-class_ = dataframe["Class"]
-scaler = StandardScaler()
-scaler.fit(dataframe.iloc[:, :-1])
-dataframe = pd.DataFrame(scaler.transform(dataframe.iloc[:, :-1]), columns=list(dataframe.iloc[:, :-1].columns))
+# dataframe.to_csv('full_dataframe_with_rx_difference.csv', index=None)
+dataframe = dataframe.drop(["CIR", 'FPPL'], axis= 1)
+
+
+'scaler'
+# class_ = dataframe["Class"]
+# scaler = StandardScaler()
+# scaler.fit(dataframe.iloc[:, :-1])
+# dataframe = pd.DataFrame(scaler.transform(dataframe.iloc[:, :-1]), columns=list(dataframe.iloc[:, :-1].columns))
 # print(dataframe.shape)
 
 # print(dataframe)
-# Y = dataframe[:, -1]
-# X = dataframe[:, :-1]
-Y = class_
-X = dataframe
-print(Y.values)
+Y = dataframe.iloc[:, -1]
+X = dataframe.iloc[:, :-1]
+# Y = class_
+# X = dataframe
+
 
 
 x_train, x_test, y_train, y_test = train_test_split(
@@ -95,7 +103,8 @@ def classification(method):
     # plt.close()
     "<<<<<<<<"
 
+
+# dataframe = dataframe.drop(["CIR", 'FPPL'], axis= 1)
+# print(dataframe.loc[dataframe["Class"]==1].corr())
+
 classification(lgbm)
-
-# print(dataframe["RX_level"].describe())
-

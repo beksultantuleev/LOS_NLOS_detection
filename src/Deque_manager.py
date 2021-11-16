@@ -2,6 +2,8 @@ from Mqtt_manager import Mqtt_Manager
 import collections
 import numpy as np
 
+'deque idea, was implemented in instances itself so at the moment not in use'
+
 cir_conn = Mqtt_Manager('localhost', 'CIR')
 fppl_conn = Mqtt_Manager('localhost', 'FPPL')
 # while True:

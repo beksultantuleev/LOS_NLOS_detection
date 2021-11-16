@@ -12,6 +12,8 @@ from tensorflow.keras.models import Model
 from tensorflow.python.keras.engine.sequential import Sequential
 import joblib
 
+'first autoencoder works like pca'
+
 data = pd.read_csv('data/los_nlos_cluster_dataa.txt')
 x_train = data.drop(['activity'], axis=1)
 'reshape data'

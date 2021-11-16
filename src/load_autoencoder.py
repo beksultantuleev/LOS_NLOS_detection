@@ -11,6 +11,7 @@ from tensorflow.keras.datasets import fashion_mnist
 from tensorflow.keras.models import Model
 from keras.models import load_model
 
+'load regular autoencoder that works like pca'
 
 autoencoder = load_model('trained_models/autoencoder')
 

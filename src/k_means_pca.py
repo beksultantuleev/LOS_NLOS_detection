@@ -9,7 +9,7 @@ from collections import Counter
 from sklearn.preprocessing import StandardScaler
 import joblib
 
-"kmeans + pca"
+"kmeans + pca train models"
 
 data = pd.read_csv('data/los_nlos_cluster_dataa.txt')
 # data = pd.read_csv('data/los_nlos_cluster_by_acquisition_4.csv')
