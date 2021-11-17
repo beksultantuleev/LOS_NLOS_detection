@@ -24,7 +24,7 @@ class Plot_manager:
         if len(self.mqtt.processed_data) > 0:
             ax = plt.gca()
             ax.cla()
-            plt.title("Real-time map")
+            plt.title("LOS detection")
 
             # print(self.mqtt.processed_data[0])
 
@@ -52,18 +52,10 @@ class Plot_manager:
             # plt.legend(loc='upper left')
             plt.tight_layout()
 
-    # def add_anchors(self, anchor_list):
-    #     if any(isinstance(i, list) for i in anchor_list):
-    #         for anchor in anchor_list:
-    #             plt.scatter(anchor[0], anchor[1], color="red", s=150)
-    #             plt.text(anchor[0], anchor[1], anchor[2], color="blue")
-    #     else:
-    #         pass
-            # plt.scatter(anchor_list[0], anchor_list[1], color="red", s=150)
-            # plt.text(anchor_list[0], anchor_list[1], anchor_list[2], color = "blue")
+
 
     def run(self):
-        ani = FuncAnimation(plt.gcf(), self.animate, interval=200)
+        ani = FuncAnimation(plt.gcf(), self.animate, interval=20)
         plt.tight_layout()
         plt.show()
 

@@ -52,10 +52,12 @@ if single_data:
 'with multiple data'
 
 def deque_manager_idea(mqtt_data, size):
+    'you may want to change this. you need to update mqtt data. it should be in the while loop'
     size = size+1
     # for i in range(num_of_deques):
     deque_test = collections.deque([])
     while len(deque_test) < size:
+        "like mqtt_data = mqtt_conn.processed_data[number]"
         deque_test.appendleft(mqtt_data)
         if len(deque_test) == size:
             deque_test.pop()
