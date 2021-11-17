@@ -1,11 +1,10 @@
-import tensorflow as tf
-import pandas as pd
+import numpy as np
 
-dataframe = pd.read_csv('full_dataframe_with_rx_difference.csv')
+lis = np.array([4,1])
+# print(lis)
+# print(np.diff(lis, axis=0))
+# print(lis[1:] - lis[:-1])
+def diff(lis):
+    return lis[:-1]-lis[1:]
 
-min_val = tf.reduce_min(dataframe.loc[dataframe["Class"]==1][['RX_level', 'RX_difference']])
-max_val = tf.reduce_max(dataframe.loc[dataframe["Class"]==1][['RX_level', 'RX_difference']])
-
-print(min_val)
-print(max_val)
-print(dataframe.loc[dataframe["Class"]==1][['RX_level', 'RX_difference']])
+print(diff(lis))

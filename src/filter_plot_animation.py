@@ -15,7 +15,6 @@ class DataPlot:
         # self.buf2 = deque(maxlen=5)
 
     def add(self, x, data1, data2):
-
         self.axis_x.append(x)
         self.axis_y.append(data1)
         self.axis_y2.append(data2)

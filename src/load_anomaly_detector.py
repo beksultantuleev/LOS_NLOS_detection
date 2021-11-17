@@ -67,6 +67,7 @@ acquisition_number = 2
 window_counter = 0
 if not single_data:
     while True:
+        'change data.processed data to data = mqtt_conn.processed_data if blah blah else [0,0,0]'
         if data.processed_data:
             window_counter+=1
             # maxNoise = deque_manager_idea(data.processed_data[0], acquisition_number)
