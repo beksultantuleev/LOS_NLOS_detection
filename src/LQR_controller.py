@@ -70,8 +70,8 @@ if __name__ == "__main__":
 
     mambo = LQRcontroller()
     # ====================
-    mambo.set_current_state([1,2,1])
-    mambo.set_desired_state([-4,4,4])
+    mambo.set_current_state([0,0,0])
+    mambo.set_desired_state([5,-1, -1])
     u = mambo.calculate_cmd_input()
     print(u)
     # ===================

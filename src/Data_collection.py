@@ -7,23 +7,28 @@ from Mqtt_manager import Mqtt_Manager
 import timeit
 import pandas as pd
 import pathlib
+from SerialPortReader import SerialPortReader
 
 'main data collection file'
 
 
 class Listener():
-    def __init__(self):
+    def __init__(self, via_mqtt=True):
         self.data_folder = 'data'
         self.dataset_name = ""
         self.acquisition_number = 1
-        self.list_of_features = ["CIR", "FirstPathPL",
-                                 "maxNoise", "RX_level", "FPPL"]
+        # self.list_of_features = ["CIR", "FirstPathPL",
+        #                          "maxNoise", "RX_level", "FPPL"]
+        self.list_of_features = ["RX_level", "RX_difference"]
+        self.via_mqtt = via_mqtt
+        if self.via_mqtt:
+            self.allInOne_conn = Mqtt_Manager(
+                "localhost", "allInOne")
 
-        self.allInOne_conn = Mqtt_Manager(
-            "localhost", "allInOne")
-
-        self.data = np.empty(shape=(0, 5))
+        self.data = np.empty(shape=(0, 2))
         self.samples = 40
+
+        self.serialPortInitiation = SerialPortReader()
 
     def set_dataset_name(self, dataset_name):
         self.dataset_name = dataset_name
@@ -46,10 +51,15 @@ class Listener():
         self.samples = number
 
     def all_data_collection(self):
-        if self.allInOne_conn.processed_data:
-            # print(f"accelerom data is {self.accelemeter_conn.processed_data}")
-            self.data = np.append(self.data, np.expand_dims(
-                np.array(self.allInOne_conn.processed_data), axis=0), axis=0)
+        if self.via_mqtt:
+            if self.allInOne_conn.processed_data:
+                # print(f"accelerom data is {self.accelemeter_conn.processed_data}")
+                self.data = np.append(self.data, np.expand_dims(
+                    np.array(self.allInOne_conn.processed_data), axis=0), axis=0)
+        else:
+            if self.serialPortInitiation.get_data(pattern="Data: "):
+                self.data = np.append(self.data, np.expand_dims(
+                    np.array(self.serialPortInitiation.get_data(pattern="Data: ")), axis=0), axis=0)
 
     def dataset_configuration(self, dataset, list_of_independent_vars, acquisition="acquisition"):
         for acq_index in range(1, max(np.unique(dataset[acquisition]))+1):
@@ -67,33 +77,37 @@ class Listener():
 
         all_in_one_dataframe.insert(0, 'acquisition', self.acquisition_modifier(
             self.acquisition_number, self.samples))
-        data_name = f"{self.dataset_name}_{self.acquisition_number}_ss{self.samples/self.acquisition_number}"
+        if in_raw:
+            data_name = f"{self.dataset_name}_{self.acquisition_number}_ss{self.samples}"
+        else:
+            data_name = f"{self.dataset_name}_{self.acquisition_number}_ss{self.samples/self.acquisition_number}"
         counter = 1
 
         for root, dirs, files in os.walk(f"{pathlib.Path().absolute()}/data"):
             for f in files:
                 if data_name in f:
                     counter += 1
-        if in_raw:
-            all_in_one_dataframe.to_csv(
-                f"data/{self.dataset_name}_{self.acquisition_number}_ss{self.samples}_{counter}.csv", index=None)
-            print("Saved!")
-        else:
-            self.dataset_configuration(all_in_one_dataframe, self.list_of_features).to_csv(
-                f"data/{self.dataset_name}_{self.acquisition_number}_ss{self.samples/self.acquisition_number}_{counter}.csv", index=None)
-            print("Saved!")
+                    "in raw means saving data with no transformation. Transformation is made based on acquisition column"
+                    if in_raw:
+                        all_in_one_dataframe.to_csv(
+                            f"data/{self.dataset_name}_{self.acquisition_number}_ss{self.samples}_{counter}.csv", index=None)
+                        print("Saved!")
+                    else:
+                        self.dataset_configuration(all_in_one_dataframe, self.list_of_features).to_csv(
+                            f"data/{self.dataset_name}_{self.acquisition_number}_ss{self.samples/self.acquisition_number}_{counter}.csv", index=None)
+                        print("Saved!")
 
 
 if __name__ == "__main__":
     start = timeit.default_timer()
 
-    test = Listener()
-    test.set_dataset_name("NLOS")
+    test = Listener(via_mqtt=False)
+    test.set_dataset_name("LOS")
     test.set_acquisition_number(2)
-    test.set_sample_size(25000)
+    test.set_sample_size(300)
     limiter = 0
     while limiter != test.samples:
-        sleep(0.01)
+        # sleep(0.01) for mqtt??
         test.all_data_collection()
 
         limiter = len(test.data)
