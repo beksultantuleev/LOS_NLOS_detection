@@ -9,7 +9,7 @@ class Mqtt_Manager:
     
     Connected = False  # global variable for the state of the connection
 
-    def __init__(self, host, topic, port=1883, user=None, passwd=None):
+    def __init__(self, host, topic=None, port=1883, user=None, passwd=None):
         self.host = host
         self.port = port
         self.user = user

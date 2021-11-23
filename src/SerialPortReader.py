@@ -32,7 +32,8 @@ class SerialPortReader():
 if "__main__" == __name__:
     test = SerialPortReader()
     while True:
-        print(test.get_data("Data: ")[:-1])
+        print(test.get_data("Data: "))
+        # print(test.get_data("Distance: "))
 
             # RX_level = test.get_data("RX_level: ")
             # FP_power = test.get_data('FP_POWER: ')
