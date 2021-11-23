@@ -1,10 +1,11 @@
+from keras.layers import serialization
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.sparse import data
 import tensorflow as tf
 import pandas as pd
-
+import time
 from sklearn.metrics import accuracy_score, precision_score, recall_score
 from sklearn.model_selection import train_test_split
 from tensorflow.keras import layers, losses
@@ -13,19 +14,24 @@ from tensorflow.keras.models import Model
 from keras.models import load_model
 from Mqtt_manager import Mqtt_Manager
 import collections
+from SerialPortReader import SerialPortReader
 
 single_data = True
+via_mqtt = True
+
+if not via_mqtt:
+    serialInitiatort = SerialPortReader()
 
 if single_data:
     autoencoder = load_model('trained_models/anomaly_detection_model')
-    threshold = 0.016315665  # 0.007123868
+    threshold = 0.020093761  # 0.016315665  # 0.007123868
 else:
     autoencoder = load_model(
         'trained_models/anomaly_detection_model_acquisition_2')
     threshold = 0.015414234  # 0.032122597
 
-min_val = -96.890289
-max_val = 18.303719  # 3165.0
+min_val = -97.257522
+max_val = 18.941238  # 3165.0
 
 
 def predict(model, data, threshold):
@@ -34,18 +40,26 @@ def predict(model, data, threshold):
     return tf.math.less(loss, threshold)
 
 
-mqtt_conn = Mqtt_Manager(
-    "localhost", "allInOne")
+if via_mqtt:
+    mqtt_conn = Mqtt_Manager(
+        "localhost", "allInOne")
 
 # print(autoencoder.summary())
 
 'with single data'
+time.sleep(3)
 if single_data:
     while True:
-        # if mqtt_conn.processed_data:
-        data_mqtt = np.array(mqtt_conn.processed_data) if mqtt_conn.processed_data else np.array([0,0])
+        if via_mqtt:
+            data_mqtt = np.array(
+                mqtt_conn.processed_data)[:-1] if mqtt_conn.processed_data else np.array([0, 0])
+        else:
+            data_mqtt = np.array(
+                serialInitiatort.get_data(pattern="Data: ")[:-1])
+        # print(data_mqtt)
         real_data = (np.array(data_mqtt) -
-                        min_val) / (max_val - min_val)
+                     min_val) / (max_val - min_val) if len(data_mqtt)>0 else np.array([0,0])
+        # print(real_data)                     
         preds = predict(autoencoder, [real_data], threshold)
         print(preds)
         msg = [1] if np.array(preds)[0] else [0]

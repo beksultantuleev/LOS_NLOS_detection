@@ -19,13 +19,13 @@ class Listener():
         self.acquisition_number = 1
         # self.list_of_features = ["CIR", "FirstPathPL",
         #                          "maxNoise", "RX_level", "FPPL"]
-        self.list_of_features = ["RX_level", "RX_difference"]
+        self.list_of_features = ["RX_level", "RX_difference", 'maxNoise']
         self.via_mqtt = via_mqtt
         if self.via_mqtt:
             self.allInOne_conn = Mqtt_Manager(
                 "localhost", "allInOne")
 
-        self.data = np.empty(shape=(0, 2))
+        self.data = np.empty(shape=(0, 3))
         self.samples = 40
 
         self.serialPortInitiation = SerialPortReader()
@@ -82,32 +82,31 @@ class Listener():
         else:
             data_name = f"{self.dataset_name}_{self.acquisition_number}_ss{self.samples/self.acquisition_number}"
         counter = 1
-
         for root, dirs, files in os.walk(f"{pathlib.Path().absolute()}/data"):
             for f in files:
+                # print(f)
                 if data_name in f:
                     counter += 1
                     "in raw means saving data with no transformation. Transformation is made based on acquisition column"
-                    if in_raw:
-                        all_in_one_dataframe.to_csv(
-                            f"data/{self.dataset_name}_{self.acquisition_number}_ss{self.samples}_{counter}.csv", index=None)
-                        print("Saved!")
-                    else:
-                        self.dataset_configuration(all_in_one_dataframe, self.list_of_features).to_csv(
-                            f"data/{self.dataset_name}_{self.acquisition_number}_ss{self.samples/self.acquisition_number}_{counter}.csv", index=None)
-                        print("Saved!")
+                if in_raw:
+                    all_in_one_dataframe.to_csv(
+                        f"data/{self.dataset_name}_{self.acquisition_number}_ss{self.samples}_{counter}.csv", index=None)
+                else:
+                    self.dataset_configuration(all_in_one_dataframe, self.list_of_features).to_csv(
+                        f"data/{self.dataset_name}_{self.acquisition_number}_ss{self.samples/self.acquisition_number}_{counter}.csv", index=None)
+        print("Saved!")
 
 
 if __name__ == "__main__":
     start = timeit.default_timer()
 
-    test = Listener(via_mqtt=False)
-    test.set_dataset_name("LOS")
+    test = Listener(via_mqtt=True)
+    test.set_dataset_name("LOS_mqtt_upclose")
     test.set_acquisition_number(2)
-    test.set_sample_size(300)
+    test.set_sample_size(5000)
     limiter = 0
     while limiter != test.samples:
-        # sleep(0.01) for mqtt??
+        sleep(0.05) #for mqtt??
         test.all_data_collection()
 
         limiter = len(test.data)

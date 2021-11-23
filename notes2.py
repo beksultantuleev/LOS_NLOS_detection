@@ -2,34 +2,25 @@ import numpy as np
 from numpy.core.numeric import outer
 from scipy.spatial import distance
 import math
-from src.LQR_controller import LQRcontroller
+import pandas as pd
 
 
-lqr = LQRcontroller()
-lis = np.array([4, 1, 3])
-# print(lis)
-# print(np.diff(lis, axis=0))
-# print(lis[1:] - lis[:-1])
+new_los = pd.read_csv("data/new_LOS_2_ss50000_1.csv")
+new_los_upclose = pd.read_csv('data/LOS_mqtt_upclose_2_ss5000_1.csv')
 
+new_data = pd.concat([new_los, new_los_upclose], ignore_index=True)
+# print(new_data)
 
-def diff(lis):
-    return lis[0]-lis[-1]
-
-def modified_euclidean_d(finish, start):
-    output = []
-    for i in range(len(finish)):
-        result = math.sqrt((finish[i]-start[i])**2)
-        output.append(result)
-    return output
-
-# print(diff(lis))
-finish = [-4,4,4]
-start = [1,2,1]
-
-print(f"modified dist {modified_euclidean_d(finish, start)}")
-dst = distance.euclidean(start, finish)
-print(f"euclidean dist  {dst}")
-
-lqr.set_current_state(start)
-lqr.set_desired_state(finish)
-print(f"lqr is {lqr.calculate_cmd_input()}")
+def acquisition_modifier(acquisition_number, length_of_acquisitions):
+    if acquisition_number == 1:
+        return [1]*length_of_acquisitions
+    elif acquisition_number == 0:
+        return [0]*length_of_acquisitions
+    lis = []
+    for i in range(length_of_acquisitions):
+        lis.append(i)
+    lis = sorted(lis*acquisition_number)[:length_of_acquisitions]
+    return lis
+new_data['acquisition'] = acquisition_modifier(2, len(new_data))
+print(new_data)
+new_data.to_csv("data/LOS_serial_port_complete.csv", index=None)

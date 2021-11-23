@@ -27,30 +27,37 @@ save_model = True
 num_of_features = 2
 
 
-los_data = pd.read_csv('data/LOS_2_ss25000_1.csv')
-los_data = los_data.drop(["maxNoise", 'acquisition', 'FirstPathPL'] if single_data else ['FirstPathPL'], axis=1) #, 'FirstPathPL' "acquisition", 
-los_data["RX_difference"] = los_data['RX_level'] - los_data["FPPL"]
-"another transformation"
-if not single_data:
-    los_data = dataset_configuration(los_data, list_of_independent_vars)
+# los_data = pd.read_csv('data/LOS_2_ss25000_1.csv')
+# los_data = los_data.drop(["maxNoise", 'acquisition', 'FirstPathPL'] if single_data else ['FirstPathPL'], axis=1) #, 'FirstPathPL' "acquisition", 
+# los_data["RX_difference"] = los_data['RX_level'] - los_data["FPPL"]
+# "another transformation"
+# if not single_data:
+#     los_data = dataset_configuration(los_data, list_of_independent_vars)
+# los_data["Class"] = 1
+
+# nlos_data = pd.read_csv('data/NLOS_2_ss25000_1.csv')
+# nlos_data = nlos_data.drop(["maxNoise", 'acquisition', 'FirstPathPL'] if single_data else ['FirstPathPL'], axis=1)
+# nlos_data["RX_difference"] = nlos_data['RX_level'] - nlos_data["FPPL"]
+# "another transformation"
+# if not single_data:
+#     nlos_data = dataset_configuration(nlos_data, list_of_independent_vars)
+# nlos_data["Class"] = 0
+
+# dataframe = pd.concat([nlos_data, los_data], ignore_index=True)
+# # dataframe.to_csv('full_dataframe_with_rx_difference.csv', index=None)
+# if single_data:
+#     dataframe = dataframe.drop(['CIR', 'FPPL'], axis= 1)
+
+'with fake nlos'
+los_data = pd.read_csv('data/LOS_mqtt_complete.csv')
+los_data = los_data.drop(["maxNoise", 'acquisition'], axis=1)
 los_data["Class"] = 1
 
-nlos_data = pd.read_csv('data/NLOS_2_ss25000_1.csv')
-nlos_data = nlos_data.drop(["maxNoise", 'acquisition', 'FirstPathPL'] if single_data else ['FirstPathPL'], axis=1)
-nlos_data["RX_difference"] = nlos_data['RX_level'] - nlos_data["FPPL"]
-"another transformation"
-if not single_data:
-    nlos_data = dataset_configuration(nlos_data, list_of_independent_vars)
+nlos_data = pd.read_csv('data/LOS_serial_port_complete.csv')
+nlos_data = nlos_data.drop(["maxNoise", 'acquisition'], axis=1)
 nlos_data["Class"] = 0
-
 dataframe = pd.concat([nlos_data, los_data], ignore_index=True)
-# dataframe.to_csv('full_dataframe_with_rx_difference.csv', index=None)
-if single_data:
-    dataframe = dataframe.drop(['CIR', 'FPPL'], axis= 1)
-
-
-
-
+'<<<<<<<<<<<<<<<<<<<'
 print(dataframe)
 "scaling data"
 'note! use scaling for training set only to avoid data leakage'

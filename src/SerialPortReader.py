@@ -1,6 +1,7 @@
 from posix import ST_RDONLY
 from serial import Serial
 import json
+import numpy as np
 
 import serial
 
@@ -31,4 +32,10 @@ class SerialPortReader():
 if "__main__" == __name__:
     test = SerialPortReader()
     while True:
-        print(test.get_data("Data: "))
+        print(test.get_data("Data: ")[:-1])
+
+            # RX_level = test.get_data("RX_level: ")
+            # FP_power = test.get_data('FP_POWER: ')
+            # RX_diff = RX_level - FP_power
+            # print(RX_diff)
+        
