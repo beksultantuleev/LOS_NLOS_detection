@@ -7,12 +7,16 @@ from src.Mqtt_manager import Mqtt_Manager
 import os
 import pathlib
 
-path = f"{pathlib.Path().absolute()}/data/good_nlos_data"
+dataframe = pd.DataFrame()
+path = f"{pathlib.Path().absolute()}/data/good_nlos_data/"
 for root, dirs, files in os.walk(path):
     for i in files:
-        print(i)
-        # print('hello')
 
+        # print(i)
+        data = pd.read_csv(f'data/good_nlos_data/{i}')
+        dataframe = pd.concat([dataframe, data], ignore_index=True)
+
+# print(dataframe)
 
 # new_data = pd.concat([new_los, new_los_upclose], ignore_index=True)
 # print(new_data)
@@ -27,6 +31,8 @@ def acquisition_modifier(acquisition_number, length_of_acquisitions):
         lis.append(i)
     lis = sorted(lis*acquisition_number)[:length_of_acquisitions]
     return lis
-# new_data['acquisition'] = acquisition_modifier(2, len(new_data))
-# print(new_data)
-# new_data.to_csv("data/LOS_serial_port_complete.csv", index=None)
+
+dataframe['acquisition'] = acquisition_modifier(2, len(dataframe))
+
+print(dataframe)
+# dataframe.to_csv("data/NLOS_good_data_complete.csv", index=None)
