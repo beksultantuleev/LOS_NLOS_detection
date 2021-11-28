@@ -1,7 +1,7 @@
 from serial import Serial
 import json
 import numpy as np
-from Mqtt_manager import Mqtt_Manager
+from Managers.Mqtt_manager import Mqtt_Manager
 
 class SerialPortReader():
     def __init__(self, baudrate=115200, port='/dev/ttyACM0'):

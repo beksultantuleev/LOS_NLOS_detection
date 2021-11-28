@@ -1,9 +1,8 @@
 from time import sleep
 import os
-import signal
 from typing import Mapping
 import numpy as np
-from Mqtt_manager import Mqtt_Manager
+from Managers.Mqtt_manager import Mqtt_Manager
 import timeit
 import pandas as pd
 import pathlib
@@ -19,13 +18,13 @@ class Listener():
         self.acquisition_number = 1
         # self.list_of_features = ["CIR", "FirstPathPL",
         #                          "maxNoise", "RX_level", "FPPL"]
-        self.list_of_features = ["RX_level", "RX_difference", 'maxNoise']
+        self.list_of_features = ["RX_level", "RX_difference"]
         self.via_port_reader = via_port_reader
         # if self.via_mqtt:
         self.allInOne_conn = Mqtt_Manager(
             "localhost", "allInOne")
 
-        self.data = np.empty(shape=(0, 3))
+        self.data = np.empty(shape=(0, len(self.list_of_features)))
         self.samples = 40
 
         self.serialPortInitiation = SerialPortReader()
@@ -104,9 +103,9 @@ if __name__ == "__main__":
     start = timeit.default_timer()
 
     test = Listener(via_port_reader=True)
-    test.set_dataset_name("nlos_data")
+    test.set_dataset_name("NLOS_data_water")
     test.set_acquisition_number(2)
-    test.set_sample_size(15000)
+    test.set_sample_size(95000)
     limiter = 0
     while limiter != test.samples:
         # sleep(0.05) #for mqtt??

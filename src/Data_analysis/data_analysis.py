@@ -11,15 +11,15 @@ from sklearn.preprocessing import StandardScaler
 'data analysis for selecting right variables'
 
 los_data = pd.read_csv('data/LOS_good_data_complete.csv')
-los_data = los_data.drop(["acquisition", 'maxNoise'], axis=1) #, 'FirstPathPL'
 los_data["Class"] = 1
 
 nlos_data = pd.read_csv('data/NLOS_good_data_complete.csv')
-nlos_data = nlos_data.drop(["acquisition", 'maxNoise'], axis=1)
 nlos_data["Class"] = 0
 # print(los_data.head())
 # print(nlos_data.head())
 dataframe = pd.concat([nlos_data, los_data], ignore_index=True)
+dataframe = dataframe.drop(["acquisition"], axis=1)
+
 # dataframe.to_csv('full_dataframe_with_rx_difference.csv', index=None)
 
 

@@ -3,7 +3,7 @@ from numpy.core.numeric import outer
 from scipy.spatial import distance
 import math
 import pandas as pd
-from src.Mqtt_manager import Mqtt_Manager
+from src.Managers.Mqtt_manager import Mqtt_Manager
 import os
 import pathlib
 
@@ -33,6 +33,7 @@ def acquisition_modifier(acquisition_number, length_of_acquisitions):
     return lis
 
 dataframe['acquisition'] = acquisition_modifier(2, len(dataframe))
+dataframe = dataframe.drop(["maxNoise"], axis= 1)
 
 print(dataframe)
-# dataframe.to_csv("data/NLOS_good_data_complete.csv", index=None)
+dataframe.to_csv("data/NLOS_good_data_complete.csv", index=None)

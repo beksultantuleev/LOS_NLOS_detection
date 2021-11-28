@@ -12,9 +12,18 @@ from tensorflow.keras import layers, losses
 from tensorflow.keras.datasets import fashion_mnist
 from tensorflow.keras.models import Model
 from keras.models import load_model
-from Mqtt_manager import Mqtt_Manager
+from Managers.Mqtt_manager import Mqtt_Manager
 import collections
 from SerialPortReader import SerialPortReader
+import joblib
+
+def value_extractor(pattern, path):
+    with open(path) as f:
+        lines = f.read().splitlines()
+        for i in lines:
+            if pattern in i:
+                value = float(i[len(pattern):])
+                return value
 
 single_data = True
 via_mqtt = True
@@ -24,43 +33,51 @@ if not via_mqtt:
 
 if single_data:
     autoencoder = load_model('trained_models/anomaly_detection_model')
-    threshold = 0.011440243  # 0.016315665  # 0.007123868
+    path = 'src/Training/logs/anomaly_detection/logs_Single_data_input.txt'
+    
+    threshold = value_extractor("Threshold:", path)
+    min_val =  value_extractor("Min_val:", path)
+    max_val = value_extractor("Max_val:", path)
+
 else:
     autoencoder = load_model(
         'trained_models/anomaly_detection_model_acquisition_2')
-    threshold = 0.014725879  # 0.032122597
+    path = 'src/Training/logs/anomaly_detection/logs_Multi_data_input.txt'
+    
+    threshold = value_extractor("Threshold:", path)
+    min_val =  value_extractor("Min_val:", path)
+    max_val = value_extractor("Max_val:", path)
 
-min_val = -96.774475
-max_val = 11.100876  # 3165.0
-
-
+print(threshold)
 def predict(model, data, threshold):
     reconstructions = model(data)
     loss = tf.keras.losses.mae(reconstructions, data)
     return tf.math.less(loss, threshold)
 
 
-if via_mqtt:
-    mqtt_conn = Mqtt_Manager(
-        "localhost", "allInOne")
 
-# print(autoencoder.summary())
+mqtt_conn = Mqtt_Manager(
+    "localhost", "allInOne")
+
 
 'with single data'
 if single_data:
+    # scaler = joblib.load('trained_models/standard_scaler_anomaly_detection_single_data_input.save')
+
     while True:
-        if via_mqtt:
-            data_mqtt = np.array(
-                mqtt_conn.processed_data)[:-1] if mqtt_conn.processed_data else np.array([0, 0])
-        else:
-            data_mqtt = np.array(
-                serialInitiatort.get_data(pattern="Data: ")[:-1])
-        # print(data_mqtt)
+
+        data_mqtt = np.array(
+            mqtt_conn.processed_data)[:] if mqtt_conn.processed_data else np.array([0, 0])
+
+        # scaled_data = scaler.transform([data_mqtt])
+
+
         real_data = (np.array(data_mqtt) -
                      min_val) / (max_val - min_val) if len(data_mqtt) > 0 else np.array([0, 0, 0])
         # print(real_data)
         preds = predict(autoencoder, [real_data], threshold)
         print(preds)
+        # print(threshold)
         msg = [1] if np.array(preds)[0] else [0]
         mqtt_conn.publish("LOS", f'{msg}')
 
