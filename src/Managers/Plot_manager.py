@@ -28,7 +28,7 @@ class Plot_manager:
 
             # print(self.mqtt.processed_data[0])
 
-            if self.mqtt.processed_data[0]==0:
+            if self.mqtt.processed_data[0]==1:
                 plt.text(0.5, 0.5, "LOS", size=50,
                         ha="center", va="center",
                         bbox=dict(boxstyle="round",
@@ -45,7 +45,7 @@ class Plot_manager:
                                )
                      )     
             else:
-                plt.text(0.5, 0.5, "NLOS Hard", size=50,
+                plt.text(0.5, 0.5, "NLOS", size=50,
                      ha="center", va="center",
                      bbox=dict(boxstyle="round",
                                ec=(1., 0, 0),

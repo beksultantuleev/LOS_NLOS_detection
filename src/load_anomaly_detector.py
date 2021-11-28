@@ -17,6 +17,7 @@ import collections
 from SerialPortReader import SerialPortReader
 import joblib
 
+
 def value_extractor(pattern, path):
     with open(path) as f:
         lines = f.read().splitlines()
@@ -25,70 +26,43 @@ def value_extractor(pattern, path):
                 value = float(i[len(pattern):])
                 return value
 
-single_data = True
-via_mqtt = True
 
-if not via_mqtt:
-    serialInitiatort = SerialPortReader()
-
-if single_data:
-    autoencoder = load_model('trained_models/anomaly_detection_model')
-    path = 'src/Training/logs/anomaly_detection/logs_Single_data_input.txt'
-    
-    threshold = value_extractor("Threshold:", path)
-    min_val =  value_extractor("Min_val:", path)
-    max_val = value_extractor("Max_val:", path)
-
-else:
-    autoencoder = load_model(
-        'trained_models/anomaly_detection_model_acquisition_2')
-    path = 'src/Training/logs/anomaly_detection/logs_Multi_data_input.txt'
-    
-    threshold = value_extractor("Threshold:", path)
-    min_val =  value_extractor("Min_val:", path)
-    max_val = value_extractor("Max_val:", path)
-
-print(threshold)
-def predict(model, data, threshold):
-    reconstructions = model(data)
-    loss = tf.keras.losses.mae(reconstructions, data)
-    return tf.math.less(loss, threshold)
-
-
+single_data = False
+use_scaler = False
+acquisition_number = 4
 
 mqtt_conn = Mqtt_Manager(
     "localhost", "allInOne")
 
 
-'with single data'
+
 if single_data:
-    # scaler = joblib.load('trained_models/standard_scaler_anomaly_detection_single_data_input.save')
+    if use_scaler:
+        scaler = joblib.load(
+            'trained_models/standard_scaler_anomaly_detection_single_data_input.save')
+    autoencoder = load_model('trained_models/anomaly_detection_model')
+    path = 'src/Training/logs/anomaly_detection/logs_Single_data_input.txt'
 
-    while True:
+    threshold = value_extractor("Threshold:", path)
+    min_val = value_extractor("Min_val:", path)
+    max_val = value_extractor("Max_val:", path)
+else:
+    if use_scaler:
+        scaler = joblib.load(
+            'trained_models/standard_scaler_anomaly_detection_single_data_input.save')
+    autoencoder = load_model(
+        'trained_models/anomaly_detection_model_acquisition_2')
+    path = 'src/Training/logs/anomaly_detection/logs_Multi_data_input.txt'
 
-        data_mqtt = np.array(
-            mqtt_conn.processed_data)[:] if mqtt_conn.processed_data else np.array([0, 0])
+    threshold = value_extractor("Threshold:", path)
+    min_val = value_extractor("Min_val:", path)
+    max_val = value_extractor("Max_val:", path)
 
-        # scaled_data = scaler.transform([data_mqtt])
-
-
-        real_data = (np.array(data_mqtt) -
-                     min_val) / (max_val - min_val) if len(data_mqtt) > 0 else np.array([0, 0, 0])
-        # print(real_data)
-        preds = predict(autoencoder, [real_data], threshold)
-        print(preds)
-        # print(threshold)
-        msg = [1] if np.array(preds)[0] else [0]
-        mqtt_conn.publish("LOS", f'{msg}')
-
-
-'with multiple data'
-
-
-def deque_manager_idea(number, size):
+def deque_manager(number, size):
     size = size+1
     deque_test = collections.deque([])
     while len(deque_test) < size:
+        time.sleep(0.01) #to see updates in deques
         mqtt_data = mqtt_conn.processed_data[number] if mqtt_conn.processed_data else 0
         deque_test.appendleft(mqtt_data)
         if len(deque_test) == size:
@@ -96,27 +70,46 @@ def deque_manager_idea(number, size):
             return np.array(deque_test)
 
 
-acquisition_number = 2
-window_counter = 0
-if not single_data:
+def predict(model, data, threshold):
+    reconstructions = model(data)
+    loss = tf.keras.losses.mae(reconstructions, data)
+    return tf.math.less(loss, threshold)
+
+'with single data'
+if single_data:
     while True:
-        'change data.processed data to data = mqtt_conn.processed_data if blah blah else [0,0,0]'
-        # if data.processed_data:
-        data = np.array(
-            mqtt_conn.processed_data) if mqtt_conn.processed_data else np.array([0, 0])
-        window_counter += 1
-        RX_level = deque_manager_idea(
-            0, acquisition_number)
-        RX_difference = deque_manager_idea(
-            1, acquisition_number)
-        real_data = ((np.concatenate((RX_level, RX_difference),
-                     axis=0)) - min_val) / (max_val - min_val)
+        raw_data = np.array(
+            mqtt_conn.processed_data)[:] if mqtt_conn.processed_data else np.array([0, 0])
+        if use_scaler:
+            "not finished yet"
+            scaled_data = scaler.transform([raw_data])
+            real_data = (np.array(raw_data) -
+                        min_val) / (max_val - min_val) if len(raw_data) > 0 else np.array([0, 0])
+        else:
+            real_data = (np.array(raw_data) -
+                        min_val) / (max_val - min_val) if len(raw_data) > 0 else np.array([0, 0])
         # print(real_data)
-        'put here a window counter'
+        preds = predict(autoencoder, [real_data], threshold)
+        print(preds)
+        # print(threshold)
+        msg = [1] if np.array(preds)[0] else [0]
+        mqtt_conn.publish("LOS", f'{msg}')
+else:
+    'with multiple data'
+    window_counter = 0
+    while True:
+        RX_level = deque_manager(
+            0, acquisition_number)
+        RX_difference = deque_manager(
+            1, acquisition_number)
+        raw_data = ((np.concatenate((RX_level, RX_difference),
+                    axis=0)) - min_val) / (max_val - min_val)
+        window_counter += 1
+        # 'put here a window counter'
         if window_counter == acquisition_number:
-            preds = predict(autoencoder, [real_data], threshold)
+            preds = predict(autoencoder, [raw_data], threshold)
             print(preds)
-            # print(real_data)
+            # print(raw_data)
             msg = [1] if np.array(preds)[0] else [0]
             mqtt_conn.publish("LOS", f'{msg}')
             window_counter = 0

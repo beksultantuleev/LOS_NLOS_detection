@@ -20,17 +20,19 @@ class Train_anomaly_detection_model():
         self.turn_on_all_plots = True
         self.number_of_features = len(self.list_of_features)
 
-    def set_configuration(self, single_data_input=True, save_model=False, turn_on_all_plots=True, list_of_features=["RX_level", 'RX_difference']):
+    def set_configuration(self, single_data_input=True, save_model=False, turn_on_all_plots=True, list_of_features=["RX_level", 'RX_difference'], acquisition_number = 2):
         self.single_data_input = single_data_input
         self.save_model = save_model
         self.turn_on_all_plots = turn_on_all_plots
         self.list_of_features = list_of_features
+        self.acquisition_number = acquisition_number
         if not self.single_data_input:
-            self.number_of_features = len(self.list_of_features)*2
+            self.number_of_features = len(self.list_of_features)*self.acquisition_number
         else:
             self.number_of_features = len(self.list_of_features)
 
-    def multiInputConfiguration(self, dataset, list_of_independent_vars, acquisition="acquisition"):
+    def multiInputConfiguration(self, dataset, list_of_independent_vars, acquisition="acquisition", set_num_of_acquisition = 2):
+        dataset[acquisition] = self.acquisition_modifier(acquisition_number=set_num_of_acquisition, length_of_acquisitions=len(dataset))
         for acq_index in range(1, max(np.unique(dataset[acquisition]))+1):
             temp = dataset[dataset[acquisition] == acq_index]
         dataset['idx'] = dataset.groupby(acquisition).cumcount()
@@ -56,9 +58,9 @@ class Train_anomaly_detection_model():
         nlos_data = pd.read_csv(nlos_data)
         if not self.single_data_input:
             los_data = self.multiInputConfiguration(
-                los_data, self.list_of_features)
+                los_data, self.list_of_features, set_num_of_acquisition=self.acquisition_number)
             nlos_data = self.multiInputConfiguration(
-                nlos_data, self.list_of_features)
+                nlos_data, self.list_of_features, set_num_of_acquisition=self.acquisition_number)
 
         los_data['Class'] = 1
         nlos_data['Class'] = 0
@@ -66,11 +68,13 @@ class Train_anomaly_detection_model():
         if self.single_data_input:
             dataframe = dataframe[self.list_of_features + ["Class"]]
             # print(dataframe)
+        # print(dataframe)
+        # print(dataframe.shape)
         raw_data = dataframe.values
 
         # The last element contains the labels
         labels = raw_data[:, -1]
-        # print(raw_data.shape)
+
         # The other data points are the electrocadriogram data
         data = raw_data[:, 0:-1]
         x_train, x_test, y_train, y_test = train_test_split(
@@ -230,15 +234,14 @@ Recall: {recall_score(labels, predictions)}
         preds = predict(autoencoder, self.x_test, threshold)
         log_stats(preds, self.y_test)
 
-        # print(x_test)
-        pass
 
 
 if "__main__" == __name__:
     test = Train_anomaly_detection_model()
-    list_of_features = ["RX_level", 'RX_difference']  # , 'maxNoise'
+    list_of_features = ["RX_level", 'RX_difference']
     test.set_configuration(single_data_input=False, save_model=True,
-                           turn_on_all_plots=True, list_of_features=list_of_features)
+                           turn_on_all_plots=True, list_of_features=list_of_features, 
+                           acquisition_number=4)
     test.select_dataset('data/LOS_good_data_complete.csv',
                         'data/NLOS_data_water_2_ss95000_1.csv', sklearn_scale=False)
     test.start_training(epochs=50)
