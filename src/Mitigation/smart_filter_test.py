@@ -1,11 +1,13 @@
-from Mqtt_manager import Mqtt_Manager
+from Managers.Mqtt_manager import Mqtt_Manager
 import time
 import numpy as np
 import collections
 from scipy.spatial import distance
 import math
-from LQR_controller import LQRcontroller
+from Controllers.LQR_controller import LQRcontroller
 from KalmanFilter import KalmanFilterUWB
+
+'the name of this mitigation is dead reckoning'
 
 mqtt_conn = Mqtt_Manager('localhost', "Position")
 mqtt_los = Mqtt_Manager('localhost', "LOS")
@@ -52,7 +54,7 @@ while True:
 
         'expand deque to contain 1 second data'
         if not N_found:
-            while int(time_difference) != 1:
+            while time_difference < 1:
                 data_deque_with_ts = deque_manager_with_ts(n)
                 time_data = data_deque_with_ts[:, 1]
                 time_difference = diff(time_data)

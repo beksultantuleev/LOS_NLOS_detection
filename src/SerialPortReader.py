@@ -23,7 +23,7 @@ if "__main__" == __name__:
     while True:
         # print(test.get_data("Data: "))
         # print(test.get_data("Distance: "))
-        mqtt_conn.publish('allInOne', f"{test.get_data('Data: ')}")
+        mqtt_conn.publish('allInOne', f"{test.get_data('Data:new ')}")
             # RX_level = test.get_data("RX_level: ")
             # FP_power = test.get_data('FP_POWER: ')
             # RX_diff = RX_level - FP_power

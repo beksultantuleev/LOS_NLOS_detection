@@ -16,11 +16,10 @@ class Listener():
         self.data_folder = 'data'
         self.dataset_name = ""
         self.acquisition_number = 1
-        # self.list_of_features = ["CIR", "FirstPathPL",
-        #                          "maxNoise", "RX_level", "FPPL"]
-        self.list_of_features = ["RX_level", "RX_difference"]
+        # self.list_of_features = ["RX_level", "RX_difference"]
+        self.list_of_features = ["RX_level",
+                                 "RX_difference", "CIR", "F1", "F2", "F3"]
         self.via_port_reader = via_port_reader
-        # if self.via_mqtt:
         self.allInOne_conn = Mqtt_Manager(
             "localhost", "allInOne")
 
@@ -49,20 +48,24 @@ class Listener():
     def set_sample_size(self, number):
         self.samples = number
 
-    def all_data_collection(self, publish = False):
+    def all_data_collection(self, publish=False):
         if not self.via_port_reader:
             if self.allInOne_conn.processed_data:
                 # print(f"accelerom data is {self.accelemeter_conn.processed_data}")
                 self.data = np.append(self.data, np.expand_dims(
                     np.array(self.allInOne_conn.processed_data), axis=0), axis=0)
         else:
-            if self.serialPortInitiation.get_data(pattern="Data: "):
-                serialPort_data = self.serialPortInitiation.get_data(pattern="Data: ")
+            pattern = "Data:new "
+            if self.serialPortInitiation.get_data(pattern=pattern):
+                serialPort_data = self.serialPortInitiation.get_data(
+                    pattern=pattern)
                 self.data = np.append(self.data, np.expand_dims(
                     np.array(serialPort_data), axis=0), axis=0)
                 if publish:
-                    self.allInOne_conn.publish('allInOne', f'{serialPort_data}')
+                    self.allInOne_conn.publish(
+                        'allInOne', f'{serialPort_data}')
                     # pass
+
     def dataset_configuration(self, dataset, list_of_independent_vars, acquisition="acquisition"):
         for acq_index in range(1, max(np.unique(dataset[acquisition]))+1):
             temp = dataset[dataset[acquisition] == acq_index]
@@ -103,9 +106,9 @@ if __name__ == "__main__":
     start = timeit.default_timer()
 
     test = Listener(via_port_reader=True)
-    test.set_dataset_name("NLOS_data_water")
-    test.set_acquisition_number(2)
-    test.set_sample_size(95000)
+    test.set_dataset_name("NLOS_2m_test")
+    test.set_acquisition_number(4)
+    test.set_sample_size(5000)
     limiter = 0
     while limiter != test.samples:
         # sleep(0.05) #for mqtt??

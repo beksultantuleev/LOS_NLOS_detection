@@ -10,10 +10,11 @@ from sklearn.preprocessing import StandardScaler
 
 'data analysis for selecting right variables'
 
-los_data = pd.read_csv('data/LOS_good_data_complete.csv')
+los_data = pd.read_csv('data/LOS_2m_test_4_ss5000_1.csv')
 los_data["Class"] = 1
 
-nlos_data = pd.read_csv('data/NLOS_good_data_complete.csv')
+nlos_data = pd.read_csv('data/NLOS_2m_test_4_ss5000_1.csv')
+# nlos_data = pd.read_csv('data/NLOS_1m_test_4_ss5000_2.csv')
 nlos_data["Class"] = 0
 # print(los_data.head())
 # print(nlos_data.head())
