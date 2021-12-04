@@ -2,7 +2,7 @@ from time import sleep
 import os
 from typing import Mapping
 import numpy as np
-from Managers.Mqtt_manager import Mqtt_Manager
+from Mqtt_manager import Mqtt_Manager
 import timeit
 import pandas as pd
 import pathlib

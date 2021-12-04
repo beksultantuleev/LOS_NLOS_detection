@@ -4,8 +4,8 @@ import numpy as np
 import collections
 from scipy.spatial import distance
 import math
-from Controllers.LQR_controller import LQRcontroller
-from KalmanFilter import KalmanFilterUWB
+from Controllers_and_KF.LQR_controller import LQRcontroller
+from Controllers_and_KF.KalmanFilter import KalmanFilterUWB
 
 'the name of this mitigation is dead reckoning'
 

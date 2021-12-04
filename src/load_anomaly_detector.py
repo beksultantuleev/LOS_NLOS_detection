@@ -13,19 +13,8 @@ from tensorflow.keras.datasets import fashion_mnist
 from tensorflow.keras.models import Model
 from keras.models import load_model
 from Managers.Mqtt_manager import Mqtt_Manager
-import collections
-from SerialPortReader import SerialPortReader
+from Core_functions.hub_of_functions import *
 import joblib
-
-
-def value_extractor(pattern, path):
-    with open(path) as f:
-        lines = f.read().splitlines()
-        for i in lines:
-            if pattern in i:
-                value = float(i[len(pattern):])
-                return value
-
 
 single_data = False
 use_scaler = False
@@ -58,19 +47,6 @@ else:
     min_val = value_extractor("Min_val:", path)
     max_val = value_extractor("Max_val:", path)
 
-def deque_manager(number, size):
-    'updated deque manager, new values at the end of deque'
-    size = size+1
-    deque_test = collections.deque([])
-    while len(deque_test) < size:
-        time.sleep(0.01) #to see updates in deques
-        mqtt_data = mqtt_conn.processed_data[number] if mqtt_conn.processed_data else 0
-        # deque_test.appendleft(mqtt_data)
-        deque_test.append(mqtt_data)
-        if len(deque_test) == size:
-            # deque_test.pop()
-            deque_test.popleft()
-            return np.array(deque_test)
 
 
 def predict(model, data, threshold):
@@ -102,9 +78,9 @@ else:
     window_counter = 0
     while True:
         RX_level = deque_manager(
-            0, acquisition_number)
+            0, acquisition_number, mqtt_conn)
         RX_difference = deque_manager(
-            1, acquisition_number)
+            1, acquisition_number, mqtt_conn)
         raw_data = ((np.concatenate((RX_level, RX_difference),
                     axis=0)) - min_val) / (max_val - min_val)
         window_counter += 1

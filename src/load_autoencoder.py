@@ -11,23 +11,11 @@ from tensorflow.keras.datasets import fashion_mnist
 from tensorflow.keras.models import Model
 from keras.models import load_model
 import collections
+from Core_functions.hub_of_functions import *
 
 
 'load regular autoencoder that works like pca'
 
-def deque_manager(number, size):
-    'updated deque manager, new values at the end of deque'
-    size = size+1
-    deque_test = collections.deque([])
-    while len(deque_test) < size:
-        time.sleep(0.01) #to see updates in deques
-        mqtt_data = mqtt_conn.processed_data[number] if mqtt_conn.processed_data else 0
-        # deque_test.appendleft(mqtt_data)
-        deque_test.append(mqtt_data)
-        if len(deque_test) == size:
-            # deque_test.pop()
-            deque_test.popleft()
-            return np.array(deque_test)
 
 autoencoder = load_model('trained_models/autoencoder')
 
