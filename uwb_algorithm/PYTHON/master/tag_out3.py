@@ -7,7 +7,7 @@ import json
 import paho.mqtt.client as mqttClient
 import time
 import collections
-from influxdb import InfluxDBClient
+# from influxdb import InfluxDBClient
 import atexit
 
 Connected = False   #global variable for the state of the connection
@@ -29,7 +29,7 @@ DBdata['tags']['anchors'] = 6
 dist = {'A1' : 0, 'A2' : 0, 'A3' : 0, 'A4' : 0, 'A5' : 0, 'A6' : 0}
 dict_keys = list(dist.keys())
 
-broker_address= "localhost"                      #Broker address
+broker_address= "192.168.0.119"                      #Broker address
 port_id = 1883                                     #Broker port
 subscriptions_qos  = [("tags/#", 0)]
 
@@ -50,10 +50,10 @@ def on_connect(client, userdata, flags, rc):
 
 
 
-def db_connect():
-  global clientDB
-  clientDB = InfluxDBClient('localhost', 8086, 'u_uwb', 'de12mO=7C5fTb', 'CAINELLI_TEST1')
-  print("Connected to InfluxDB v" + clientDB.ping())
+# def db_connect():
+#   global clientDB
+#   clientDB = InfluxDBClient('localhost', 8086, 'u_uwb', 'de12mO=7C5fTb', 'CAINELLI_TEST1')
+#   print("Connected to InfluxDB v" + clientDB.ping())
 
 
 
@@ -62,9 +62,9 @@ def on_message(client, userdata, message):
 
 
 
-def db_insert(data):
-  #print('inserting ' + data)
-  clientDB.write_points([data])
+# def db_insert(data):
+#   #print('inserting ' + data)
+#   clientDB.write_points([data])
 
 
 

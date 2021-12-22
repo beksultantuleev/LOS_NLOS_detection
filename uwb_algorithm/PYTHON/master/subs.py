@@ -31,7 +31,7 @@ def on_message(client, userdata, message):
 Connected = False   #global variable for the state of the connection
 
  
-broker_address= "localhost"                      	#Broker address
+broker_address= "192.168.0.119"                      	#Broker address
 port_id = 1883                                     	#Broker port
  
 client = mqtt.Client()                             	#create new instance
@@ -49,12 +49,12 @@ while Connected != True:
     time.sleep(0.1)
     
  
-anch_m = client.subscribe("topic/6")
+anch_m = client.subscribe("topic/master")
 anch_1 = client.subscribe("topic/1")
 anch_2 = client.subscribe("topic/2")
-anch_3 = client.subscribe("topic/3")
-anch_4 = client.subscribe("topic/4")
-anch_5 = client.subscribe("topic/5")
+# anch_3 = client.subscribe("topic/3")
+# anch_4 = client.subscribe("topic/4")
+# anch_5 = client.subscribe("topic/5")
 
 
 try:
