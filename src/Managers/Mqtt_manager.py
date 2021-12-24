@@ -50,13 +50,13 @@ class Mqtt_Manager:
         self.client.loop_start()  # start the loop
 
     def subs(self, topic):
-        local_counter = 0
-        ids = []
-        for topics in args:
-            ids.append(local_counter)
-            local_counter += 1
-        self.client.subscribe(list(zip(args, ids)))  # topic
-        # self.client.subscribe(topic)
+        # local_counter = 0
+        # ids = []
+        # for topics in args:
+        #     ids.append(local_counter)
+        #     local_counter += 1
+        # self.client.subscribe(list(zip(args, ids)))  # topic
+        self.client.subscribe(topic)
 
     def publish(self, topc, msg):
         # print("published!")
@@ -75,7 +75,8 @@ if __name__ == "__main__":
                 time.sleep(0.5)
                 test.publish('topic/1', f'1"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {5+np.random.randint(-3,10)}.512489]')
                 test.publish('topic/2', f'2"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {5+np.random.randint(-3,10)}.512489]')
-                test.publish('topic/master', f'master"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {5+np.random.randint(-3,10)}.512489]')
+                test.publish('topic/3', f'3"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {5+np.random.randint(-3,10)}.512489]')
+                # test.publish('topic/4', f'4"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {5+np.random.randint(-3,10)}.512489]')
                 
                 count+=1
             count = 0
