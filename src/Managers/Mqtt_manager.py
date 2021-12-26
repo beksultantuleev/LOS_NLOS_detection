@@ -75,9 +75,9 @@ if __name__ == "__main__":
                 # test.publish('allInOne', f'[[{-79+np.random.random()+np.random.randint(-1,1)}, {5+np.random.randint(-3,10)+np.random.random()}]]')
                 # test.publish('allInOne', f'[[{-79+np.random.random()+np.random.randint(-1,1)}, {5+np.random.randint(-3,10)+np.random.random()}], [{-79+np.random.random()+np.random.randint(-1,1)}, {5+np.random.randint(-3,10)+np.random.random()}], [{-79+np.random.random()+np.random.randint(-1,1)}, {5+np.random.randint(-3,10)+np.random.random()}]]')
                 # time.sleep(0.5)
-                test.publish('topic/1', f'1"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {5+np.random.randint(-3,15)}.512489]')
-                test.publish('topic/2', f'2"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {5+np.random.randint(-3,2)}.512489]')
-                test.publish('topic/3', f'3"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {5+np.random.randint(-3,2)}.512489]')
+                test.publish('topic/1', f'1"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {5+np.random.randint(-10,10)}.512489]')
+                test.publish('topic/2', f'2"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {5+np.random.randint(-10,10)}.512489]')
+                test.publish('topic/3', f'3"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {5+np.random.randint(-10,10)}.512489]')
                 # test.publish('topic/4', f'4"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {5+np.random.randint(-3,10)}.512489]')
 
                 count += 1

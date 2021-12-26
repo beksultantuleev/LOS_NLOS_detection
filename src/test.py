@@ -2,14 +2,18 @@
 import numpy as np
 import time
 import joblib
+from numpy.core.defchararray import count
+from numpy.core.fromnumeric import std
 from Managers.Mqtt_manager import Mqtt_Manager
 from Core_functions.hub_of_functions import deque_manager
 
 mqtt_ = Mqtt_Manager('192.168.0.119', 'id_toa_los')
 
-std_list = [0]*3
-def timestamp_filter():
+# std_list = [0]*3
+std_list = [[0, 0], [0,0], [0, 0]]
+fixed_ts = [0]*3
 
+def timestamp_filter():
     if mqtt_.processed_data:
         # std_list = [0]*len(mqtt_.processed_data)
         deque_list = [0]*len(mqtt_.processed_data)
@@ -18,12 +22,18 @@ def timestamp_filter():
         for t in mqtt_.processed_data:
             if t[-1] == 0:
                 deque_man_list = deque_manager(1, 10, mqtt_, counter)
-                # print(counter, deque_man_list)
                 deque_list[counter] = deque_man_list
-                std_list[counter] = np.std(deque_man_list)
+                std_list[counter] = [np.std(deque_man_list), np.average(deque_man_list)]
+            
+            if t[1]>std_list[counter][1]-std_list[counter][0] and t[1]<std_list[counter][1]+std_list[counter][0]:
+                # print(f'this is t1 IF {t[1]}, ')
+                fixed_ts[counter] = [t[0], t[1], t[2]]
+            else:
+                print(f'this is t1 ELSE {t[1]}')
             counter+=1
         # print(deque_list)
-        print(std_list)
+        # print(std_list)
+        print(fixed_ts)
     pass
 
 
