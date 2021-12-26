@@ -34,16 +34,23 @@ def value_extractor(pattern, path):
                 value = float(i[len(pattern):])
                 return value
 'deque managers'
-def deque_manager(number, size, mqtt_conn):
+def deque_manager(number, size, mqtt_conn, counter = None):
     'updated deque manager, new values at the end of deque'
     size = size+1
     deque_test = collections.deque([])
     while len(deque_test) < size:
-        time.sleep(0.01) #to see updates in deques
-        mqtt_data = mqtt_conn.processed_data[number] if mqtt_conn.processed_data else 0
+        time.sleep(0.05) #to see updates in deques
+        # mqtt_data = mqtt_conn.processed_data[number] if mqtt_conn.processed_data else 0
+
+        if counter!=None:
+            mqtt_data = mqtt_conn.processed_data[counter][number] if mqtt_conn.processed_data else 0
+        else:
+            mqtt_data = mqtt_conn.processed_data[number] if mqtt_conn.processed_data else 0
+        # print(f"this is mqtt data >> {mqtt_data}")
         # deque_test.appendleft(mqtt_data)
         deque_test.append(mqtt_data)
         if len(deque_test) == size:
             # deque_test.pop()
             deque_test.popleft()
-            return np.array(deque_test)
+            # return np.array(deque_test)
+            return list(deque_test)

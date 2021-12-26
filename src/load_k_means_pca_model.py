@@ -34,6 +34,7 @@ mqtt_conn = Mqtt_Manager(
 if single_data:
     while True:
         raw_data = mqtt_conn.processed_data[:] if mqtt_conn.processed_data else [0, 0]
+        # print(raw_data)
         if use_scaler:
             scaled_data = scaler.transform([raw_data])
             df = pca_model.transform(scaled_data)
@@ -58,10 +59,11 @@ else:
         # print(raw_data)
         "<<<<<<<<<"
 
-        RX_level = deque_manager(0, acquisition_number, mqtt_conn)
+        RX_level = deque_manager(0, acquisition_number, mqtt_conn, counter=1)
         RX_difference = deque_manager(1, acquisition_number, mqtt_conn)
+        # RX_difference = [0,2,2,2]#this is test
         raw_data = np.concatenate((RX_level, RX_difference), axis=0)
-        # print(new_data)
+        # print(RX_level)
         if use_scaler:
             scaled_data = scaler.transform([raw_data])
             df = pca_model.transform(scaled_data)
@@ -75,6 +77,6 @@ else:
             # print(new_data)
             pred = k_means_model.predict(df)
             mqtt_conn.publish("LOS", f'{pred}')
-            print(pred)
+            # print(pred)
             window_counter = 0
 

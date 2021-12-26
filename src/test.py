@@ -2,16 +2,35 @@
 import numpy as np
 import time
 import joblib
-# amount_of_anchors = 3
-# anchors_data = np.array([[0]*amount_of_anchors])
-# print(anchors_data)
-# st = '''[[4.0000000e+00 6.5549390e+07 1.0000000e+00]
-#       [4.0000000e+00 6.5549416e+07 0.0000000e+00]
-#       [4.0000000e+00 6.5549288e+07 1.0000000e+00]]'''
-st = '[4.0000000e+00 6.5549390e+07 1.0000000e+00]'
+from Managers.Mqtt_manager import Mqtt_Manager
+from Core_functions.hub_of_functions import deque_manager
+
+mqtt_ = Mqtt_Manager('192.168.0.119', 'id_toa_los')
+
+std_list = [0]*3
+def timestamp_filter():
+
+    if mqtt_.processed_data:
+        # std_list = [0]*len(mqtt_.processed_data)
+        deque_list = [0]*len(mqtt_.processed_data)
+        # print(mqtt_.processed_data)
+        counter = 0
+        for t in mqtt_.processed_data:
+            if t[-1] == 0:
+                deque_man_list = deque_manager(1, 10, mqtt_, counter)
+                # print(counter, deque_man_list)
+                deque_list[counter] = deque_man_list
+                std_list[counter] = np.std(deque_man_list)
+            counter+=1
+        # print(deque_list)
+        print(std_list)
+    pass
 
 
-print(np.fromstring(st))
+while True:
+    # time.sleep(0.5)
+    timestamp_filter()
+
 # print(65549343+np.random.randint(-10,10))
 # anchors = np.array([[4, 116, 65549340, -78.996398, 3.512489],
 #                     [4, 116, 65549318, -78.996398, 10.512489],

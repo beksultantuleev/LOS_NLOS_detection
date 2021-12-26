@@ -2,10 +2,10 @@ import paho.mqtt.client as mqtt
 import numpy as np
 import json
 import re
-import collections
 import time
 import joblib
 from Managers.Mqtt_manager import Mqtt_Manager
+from Core_functions.hub_of_functions import deque_manager
 
 # mqtt_inst = Mqtt_Manager("192.168.0.119", topic=[("topic/#", 0)])
 
@@ -29,19 +29,22 @@ class Position_finder:
         self.raw_anchors_data = [0]*self.amount_of_anchors
         self.processed_anchors_data = None
         self.pca_wait_flag = True
-        self.mqtt_ = Mqtt_Manager('192.168.0.119', 'id_toa_los')
+        # self.mqtt_ = Mqtt_Manager('192.168.0.119', 'id_toa_los')
 
-    def deque_manager_(self, size, data):
-        'updated deque manager, new values at the end of deque'
-        size = size+1
-        deque_test = collections.deque([])
-        while len(deque_test) < size:
-            # time.sleep(0.5)
-            deque_test.append(data)
-            if len(deque_test) == size:
-                # deque_test.pop()
-                deque_test.popleft()
-                return np.array(deque_test)
+    # def deque_manager(self, counter, number, size, mqtt_conn):
+    #     'updated deque manager, new values at the end of deque'
+    #     size = size+1
+    #     deque_test = collections.deque([])
+    #     while len(deque_test) < size:
+    #         time.sleep(0.2) #to see updates in deques
+    #         mqtt_data = mqtt_conn.processed_data[counter][number]# if mqtt_conn.processed_data else 0
+    #         print(f"this is mqtt data >> {mqtt_data}")
+    #         deque_test.appendleft(mqtt_data)
+    #         deque_test.append(mqtt_data)
+    #         if len(deque_test) == size:
+    #             # deque_test.pop()
+    #             deque_test.popleft()
+    #             return np.array(deque_test)
 
     def on_message(self, client, userdata, message):
         msg = f'{message.payload.decode("utf")}'
@@ -90,22 +93,25 @@ class Position_finder:
             self.ts_with_los_prediction[counter] = [tag_id, toa, los]
             counter += 1
         self.ts_with_los_prediction = np.array(self.ts_with_los_prediction)
-        self.client.publish('id_toa_los', f"{self.ts_with_los_prediction}")
+        
+        ts_with_los_prediction_python_list = []
+        for ts in self.ts_with_los_prediction:
+            ts_with_los_prediction_python_list.append(list(ts))
+        self.client.publish('id_toa_los', f"{ts_with_los_prediction_python_list}")
+        # self.client.publish('id_toa_los', f"{self.ts_with_los_prediction}")
         # print(self.ts_with_los_prediction)
+        # print(ts_with_los_prediction_python_list)
 
-    def timestamp_filter(self):
-        'i guess it needs to get data from mqtt'
-        'now i need to convert numpy array string to array'
-        print(f'this is >> {self.mqtt_.processed_data}')
-        # deque_list = [0]*len(self.ts_with_los_prediction)
-        # # print(self.ts_with_los_prediction)
+    # def timestamp_filter(self):
+    #     'i guess it needs to get data from mqtt'
+    #     if self.mqtt_.processed_data:
+    #         # print(f'this is >> {self.mqtt_.processed_data}')
+    #         # print(f'{self.mqtt_.processed_data}')
 
-        # counter = 0
-        # for t in self.ts_with_los_prediction:
-        #     if t[-1] == 1:
-        #         print(self.deque_manager_(4, t[1]))
-        #     counter+=1
-        pass
+    #         deque_list = [0]*len(self.ts_with_los_prediction)
+
+    #         print(self.mqtt_.processed_data)
+    #         pass
 
     def get_position(self, ts_with_los_prediction):
         c = 299792458
@@ -163,6 +169,15 @@ class Position_finder:
 
 
 if __name__ == "__main__":
+    # mqtt_ = Mqtt_Manager('192.168.0.119', 'id_toa_los')
+
+    # def timestamp_filter():
+    #     if mqtt_.processed_data:
+    #         # print(mqtt_.processed_data)
+    #         print(deque_manager(1, 10, mqtt_, 0))
+    #     pass
+
+
     A_n1 = np.array([[0], [1], [1.8]])
     A_n2 = np.array([[6], [0], [2]])
     A_n3 = np.array([[3], [3.5], [1]])  # master
@@ -173,7 +188,8 @@ if __name__ == "__main__":
     while True:
         time.sleep(0.2)
         test.pca_k_means_model()
-        test.timestamp_filter()
+        # test.timestamp_filter()
+
 
         # print(test.get_position(test.ts_with_los_prediction))
         # print(test.ts_with_los_prediction)
