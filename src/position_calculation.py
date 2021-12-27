@@ -169,14 +169,6 @@ class Position_finder:
 
 
 if __name__ == "__main__":
-    # mqtt_ = Mqtt_Manager('192.168.0.119', 'id_toa_los')
-
-    # def timestamp_filter():
-    #     if mqtt_.processed_data:
-    #         # print(mqtt_.processed_data)
-    #         print(deque_manager(1, 10, mqtt_, 0))
-    #     pass
-
 
     A_n1 = np.array([[0], [1], [1.8]])
     A_n2 = np.array([[6], [0], [2]])
@@ -188,6 +180,7 @@ if __name__ == "__main__":
     while True:
         time.sleep(0.2)
         test.pca_k_means_model()
+
         # test.timestamp_filter()
 
 
