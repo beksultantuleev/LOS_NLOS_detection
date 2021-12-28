@@ -7,11 +7,6 @@ import joblib
 from Managers.Mqtt_manager import Mqtt_Manager
 from Core_functions.hub_of_functions import deque_manager
 
-# mqtt_inst = Mqtt_Manager("192.168.0.119", topic=[("topic/#", 0)])
-
-# while True:
-#     print(mqtt_inst.test)
-
 
 class Position_finder:
     def __init__(self, anchor_postion_list=[]):
@@ -31,20 +26,7 @@ class Position_finder:
         self.pca_wait_flag = True
         # self.mqtt_ = Mqtt_Manager('192.168.0.119', 'id_toa_los')
 
-    # def deque_manager(self, counter, number, size, mqtt_conn):
-    #     'updated deque manager, new values at the end of deque'
-    #     size = size+1
-    #     deque_test = collections.deque([])
-    #     while len(deque_test) < size:
-    #         time.sleep(0.2) #to see updates in deques
-    #         mqtt_data = mqtt_conn.processed_data[counter][number]# if mqtt_conn.processed_data else 0
-    #         print(f"this is mqtt data >> {mqtt_data}")
-    #         deque_test.appendleft(mqtt_data)
-    #         deque_test.append(mqtt_data)
-    #         if len(deque_test) == size:
-    #             # deque_test.pop()
-    #             deque_test.popleft()
-    #             return np.array(deque_test)
+
 
     def on_message(self, client, userdata, message):
         msg = f'{message.payload.decode("utf")}'
