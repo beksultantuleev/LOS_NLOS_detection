@@ -63,7 +63,7 @@ def get_position(ts_with_los_prediction):
     tdoa = tdoa[0][1:]
     # print(tdoa)
     D = tdoa*c  # D is 2x1
-    # print(D)
+    print(D)
 
     D = D.reshape(len(ts_with_los_prediction)-1, 1)
     A_diff_one = np.array((A_n[0][0][0]-A_n[1:, 0]), dtype='float32')
