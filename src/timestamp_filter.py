@@ -105,5 +105,6 @@ while True:
     ts_with_los_pred = timestamp_filter()
     if ts_with_los_pred != None:
         print(get_position(ts_with_los_pred))
+        
 
 
