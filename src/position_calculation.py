@@ -24,14 +24,15 @@ class Position_finder:
         self.raw_anchors_data = [0]*self.amount_of_anchors
         self.processed_anchors_data = None
         self.pca_wait_flag = True
+        self.vanilla_ts_pred = None
 
-        self.mqtt_ = Mqtt_Manager('192.168.0.119', 'id_toa_los')
+        # self.mqtt_ = Mqtt_Manager(broker_address, 'id_toa_los')
 
         self.fixed_ts = [0]*len(self.anchor_postion_list)
 
         self.deque_list = [0]*len(self.anchor_postion_list)
         for i in range(len(self.anchor_postion_list)):
-            self.deque_list[i] = Deque_manager(5)
+            self.deque_list[i] = Deque_manager(10)
 
     def on_message(self, client, userdata, message):
         msg = f'{message.payload.decode("utf")}'
@@ -71,6 +72,9 @@ class Position_finder:
         df = pca_model.transform(raw_data)
         pred = k_means_model.predict(df)
         self.processed_anchors_data = np.c_[raw_anchors_data[:, :-2], pred]
+        self.vanilla_ts_pred = np.delete(self.processed_anchors_data, 1, 1)
+
+        # self.processed_anchors_data = np.delete(self.processed_anchors_data, 1, 1)
         # print(self.processed_anchor_data)
 
         counter = 0
@@ -81,32 +85,32 @@ class Position_finder:
             counter += 1
         self.ts_with_los_prediction = np.array(self.ts_with_los_prediction)
 
-        ts_with_los_prediction_python_list = []
-        for ts in self.ts_with_los_prediction:
-            ts_with_los_prediction_python_list.append(list(ts))
-        self.client.publish(
-            'id_toa_los', f"{ts_with_los_prediction_python_list}")
+        # ts_with_los_prediction_python_list = []
+        # for ts in self.ts_with_los_prediction:
+        #     ts_with_los_prediction_python_list.append(list(ts))
+        # self.client.publish(
+        #     'id_toa_los', f"{ts_with_los_prediction_python_list}")
         # self.client.publish('id_toa_los', f"{self.ts_with_los_prediction}")
         # print(self.ts_with_los_prediction)
         # print(ts_with_los_prediction_python_list)
 
-    def timestamp_filter_modif(self):
+    def timestamp_filter(self):
         los = 0
-        if self.mqtt_.processed_data:
-            # print(self.deque_list[0].get_std_avrg())
-            # print(self.deque_list[0].get_data_list())
-            counter = 0
-            for t in self.mqtt_.processed_data:
-                if t[-1] == los:  # LOS
-                    self.deque_list[counter].append_data(t[1])
+        # if self.mqtt_.processed_data:
+        # print(self.deque_list[0].get_std_avrg())
+        # print(self.deque_list[0].get_data_list())
+        counter = 0
+        for t in self.ts_with_los_prediction:
+            if t[-1] == los:  # LOS
+                self.deque_list[counter].append_data(t[1])
 
-                if t[1] > self.deque_list[counter].get_std_avrg()[1]-self.deque_list[counter].get_std_avrg()[0] and t[1] < self.deque_list[counter].get_std_avrg()[1]+self.deque_list[counter].get_std_avrg()[0]:
-                    self.fixed_ts[counter] = [t[0], t[1], t[2]]
-                else:
-                    self.fixed_ts[counter] = [t[0], self.deque_list[counter].get_std_avrg()[
-                        1], t[2]]  # put avrg timestamp
-                counter += 1
-            return self.fixed_ts
+            if t[1] > self.deque_list[counter].get_std_avrg()[1]-self.deque_list[counter].get_std_avrg()[0] and t[1] < self.deque_list[counter].get_std_avrg()[1]+self.deque_list[counter].get_std_avrg()[0]:
+                self.fixed_ts[counter] = [t[0], t[1], t[2]]
+            else:
+                self.fixed_ts[counter] = [t[0], self.deque_list[counter].get_std_avrg()[
+                    1], t[2]]  # put avrg timestamp
+            counter += 1
+        return self.fixed_ts
 
     def get_position(self, ts_with_los_prediction):
         c = 299792458
@@ -175,7 +179,10 @@ if __name__ == "__main__":
     while True:
         time.sleep(0.2)
         test.pca_k_means_model()
-        # print(test.timestamp_filter_modif())
-        ts_with_pred = test.timestamp_filter_modif()
+        # print(test.timestamp_filter())
+        ts_with_pred = test.timestamp_filter()
+        # print(ts_with_pred)
         if ts_with_pred != None:
-            print(test.get_position(ts_with_pred))
+            print(f"1 filtered> {test.get_position(ts_with_pred)} \t{[ts_with_pred[0][-1], ts_with_pred[1][-1], ts_with_pred[2][-1]]}")
+            print(f"2 original> {test.get_position(test.vanilla_ts_pred)} \t{[test.vanilla_ts_pred[0][-1], test.vanilla_ts_pred[1][-1], test.vanilla_ts_pred[2][-1]]}")
+

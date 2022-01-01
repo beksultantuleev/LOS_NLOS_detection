@@ -7,6 +7,7 @@ from numpy.core.fromnumeric import std
 from Managers.Mqtt_manager import Mqtt_Manager
 from Core_functions.hub_of_functions import deque_manager
 from Managers.Deque_manager import Deque_manager
+'after making deque manager i dont need this anymore. everything in position calculation file'
 
 mqtt_ = Mqtt_Manager('192.168.0.119', 'id_toa_los')
 
