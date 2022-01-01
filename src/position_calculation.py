@@ -5,7 +5,7 @@ import re
 import time
 import joblib
 from Managers.Mqtt_manager import Mqtt_Manager
-from Core_functions.hub_of_functions import deque_manager
+from Managers.Deque_manager import Deque_manager
 
 
 class Position_finder:
@@ -24,9 +24,14 @@ class Position_finder:
         self.raw_anchors_data = [0]*self.amount_of_anchors
         self.processed_anchors_data = None
         self.pca_wait_flag = True
-        # self.mqtt_ = Mqtt_Manager('192.168.0.119', 'id_toa_los')
 
+        self.mqtt_ = Mqtt_Manager('192.168.0.119', 'id_toa_los')
 
+        self.fixed_ts = [0]*len(self.anchor_postion_list)
+
+        self.deque_list = [0]*len(self.anchor_postion_list)
+        for i in range(len(self.anchor_postion_list)):
+            self.deque_list[i] = Deque_manager(5)
 
     def on_message(self, client, userdata, message):
         msg = f'{message.payload.decode("utf")}'
@@ -75,25 +80,33 @@ class Position_finder:
             self.ts_with_los_prediction[counter] = [tag_id, toa, los]
             counter += 1
         self.ts_with_los_prediction = np.array(self.ts_with_los_prediction)
-        
+
         ts_with_los_prediction_python_list = []
         for ts in self.ts_with_los_prediction:
             ts_with_los_prediction_python_list.append(list(ts))
-        self.client.publish('id_toa_los', f"{ts_with_los_prediction_python_list}")
+        self.client.publish(
+            'id_toa_los', f"{ts_with_los_prediction_python_list}")
         # self.client.publish('id_toa_los', f"{self.ts_with_los_prediction}")
         # print(self.ts_with_los_prediction)
         # print(ts_with_los_prediction_python_list)
 
-    # def timestamp_filter(self):
-    #     'i guess it needs to get data from mqtt'
-    #     if self.mqtt_.processed_data:
-    #         # print(f'this is >> {self.mqtt_.processed_data}')
-    #         # print(f'{self.mqtt_.processed_data}')
+    def timestamp_filter_modif(self):
+        los = 0
+        if self.mqtt_.processed_data:
+            # print(self.deque_list[0].get_std_avrg())
+            # print(self.deque_list[0].get_data_list())
+            counter = 0
+            for t in self.mqtt_.processed_data:
+                if t[-1] == los:  # LOS
+                    self.deque_list[counter].append_data(t[1])
 
-    #         deque_list = [0]*len(self.ts_with_los_prediction)
-
-    #         print(self.mqtt_.processed_data)
-    #         pass
+                if t[1] > self.deque_list[counter].get_std_avrg()[1]-self.deque_list[counter].get_std_avrg()[0] and t[1] < self.deque_list[counter].get_std_avrg()[1]+self.deque_list[counter].get_std_avrg()[0]:
+                    self.fixed_ts[counter] = [t[0], t[1], t[2]]
+                else:
+                    self.fixed_ts[counter] = [t[0], self.deque_list[counter].get_std_avrg()[
+                        1], t[2]]  # put avrg timestamp
+                counter += 1
+            return self.fixed_ts
 
     def get_position(self, ts_with_los_prediction):
         c = 299792458
@@ -162,11 +175,7 @@ if __name__ == "__main__":
     while True:
         time.sleep(0.2)
         test.pca_k_means_model()
-
-        # test.timestamp_filter()
-
-
-        # print(test.get_position(test.ts_with_los_prediction))
-        # print(test.ts_with_los_prediction)
-        # print(test.raw_anchors_data)
-        # print(test.processed_anchor_data)
+        # print(test.timestamp_filter_modif())
+        ts_with_pred = test.timestamp_filter_modif()
+        if ts_with_pred != None:
+            print(test.get_position(ts_with_pred))

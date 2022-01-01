@@ -8,7 +8,7 @@ import math
 import os
 
 broker_addr = '192.168.0.119'
-id_anch = 'master'
+id_anch = 3
 # GPIO.setmode(GPIO.BCM)
 # GPIO.setup(18, GPIO.OUT) #check the pin here !
 
@@ -80,16 +80,18 @@ try:
     while True:
         mesg = rl.readline().decode("utf")
         # print(mesg)
-        processed_msg = f"{id_anch}{json.dumps(mesg)[:-5]}"
-        # print(processed_msg)
-        if len(mesg.split()) < 7:
-            client.publish(topic, processed_msg, qos=0)
-        #     client.publish(topic, str(id_anch) + json.dumps(mesg)[:-5], qos=0)
+        try:
+            processed_msg = f"{id_anch}{json.dumps(mesg)[:-5]}"
+            # print(processed_msg)
+            if len(mesg.split()) < 7:
+                client.publish(topic, processed_msg, qos=0)
+            #     client.publish(topic, str(id_anch) + json.dumps(mesg)[:-5], qos=0)
 
-            # print("published " + str("anch ") +
-            #         str(id_anch) + str(": ") + str(mesg))
-        print(f"published {id_anch} {mesg}")
-
+                # print("published " + str("anch ") +
+                #         str(id_anch) + str(": ") + str(mesg))
+            print(f"published {id_anch} {mesg}")
+        except:
+            print('corrupted msg found')
 except KeyboardInterrupt:
     hser.close()
     print('closed serial port')

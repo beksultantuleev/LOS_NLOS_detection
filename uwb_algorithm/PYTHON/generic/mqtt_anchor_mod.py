@@ -110,15 +110,18 @@ try:
     while True:
         mesg = rl.readline().decode("utf")
         # print(mesg)
-        processed_msg = f"{id_anch}{json.dumps(mesg)[:-5]}"
-        # print(processed_msg)
-        if len(mesg.split()) < 7:
-            client.publish(topic, processed_msg, qos=0)
-        #     client.publish(topic, str(id_anch) + json.dumps(mesg)[:-5], qos=0)
+        try:
+            processed_msg = f"{id_anch}{json.dumps(mesg)[:-5]}"
+            # print(processed_msg)
+            if len(mesg.split()) < 7:
+                client.publish(topic, processed_msg, qos=0)
+            #     client.publish(topic, str(id_anch) + json.dumps(mesg)[:-5], qos=0)
 
-            # print("published " + str("anch ") +
-            #         str(id_anch) + str(": ") + str(mesg))
-        print(f"published {id_anch} {mesg}")
+                # print("published " + str("anch ") +
+                #         str(id_anch) + str(": ") + str(mesg))
+            print(f"published {id_anch} {mesg}")
+        except:
+            print(f"corrupted msg")
 
 except KeyboardInterrupt:
     hser.close()

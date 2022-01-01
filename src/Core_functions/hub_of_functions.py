@@ -39,7 +39,7 @@ def deque_manager(number, size, mqtt_conn, counter = None):
     size = size+1
     deque_test = collections.deque([])
     while len(deque_test) < size:
-        time.sleep(0.03) #to see updates in deques 0.05 is fine
+        time.sleep(0.02) #to see updates in deques 0.05 is fine
         # mqtt_data = mqtt_conn.processed_data[number] if mqtt_conn.processed_data else 0
 
         if counter!=None:

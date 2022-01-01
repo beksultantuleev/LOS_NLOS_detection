@@ -6,6 +6,7 @@ from numpy.core.defchararray import count
 from numpy.core.fromnumeric import std
 from Managers.Mqtt_manager import Mqtt_Manager
 from Core_functions.hub_of_functions import deque_manager
+from Managers.Deque_manager import Deque_manager
 
 mqtt_ = Mqtt_Manager('192.168.0.119', 'id_toa_los')
 
@@ -17,28 +18,56 @@ A_n3 = np.array([[3], [3.5], [1]])  # master
 anchor_postion_list = np.array([A_n1, A_n2, A_n3])
 
 # std_list = [0]*3
-std_list = [[0, 0], [0,0], [0, 0]]
-fixed_ts = [0]*3
+std_list = [[0, 0], [0, 0], [0, 0]]
+fixed_ts = [0]*len(anchor_postion_list)
+
+deque_list = [0]*len(anchor_postion_list)
+for i in range(len(anchor_postion_list)):
+    deque_list[i] = Deque_manager(5)
+
+
+def timestamp_filter_modif():
+    los = 0
+    if mqtt_.processed_data:
+        # print(deque_list[0].append_data(1))
+        # print(deque_list[0].get_data_list())
+        # print(deque_list[0].get_std_avrg())
+        counter = 0
+        for t in mqtt_.processed_data:
+            if t[-1] == los:  # LOS
+                deque_list[counter].append_data(t[1])
+
+            if t[1] > deque_list[counter].get_std_avrg()[1]-deque_list[counter].get_std_avrg()[0] and t[1] < deque_list[counter].get_std_avrg()[1]+deque_list[counter].get_std_avrg()[0]:
+                fixed_ts[counter] = [t[0], t[1], t[2]]
+            else:
+                fixed_ts[counter] = [t[0], deque_list[counter].get_std_avrg()[
+                    1], t[2]]  # put avrg timestamp
+
+            counter += 1
+        return fixed_ts
+
+
 
 def timestamp_filter():
     if mqtt_.processed_data:
-        # std_list = [0]*len(mqtt_.processed_data)
         deque_list = [0]*len(mqtt_.processed_data)
-        # print(mqtt_.processed_data)
         counter = 0
         for t in mqtt_.processed_data:
-            if t[-1] == 0:
-                deque_man_list = deque_manager(1, 10, mqtt_, counter)
+            if t[-1] == 0:  # LOS
+                deque_man_list = deque_manager(1, 7, mqtt_, counter)
                 deque_list[counter] = deque_man_list
-                std_list[counter] = [np.std(deque_man_list), np.average(deque_man_list)]
-            
-            if t[1]>std_list[counter][1]-std_list[counter][0] and t[1]<std_list[counter][1]+std_list[counter][0]:
+                std_list[counter] = [
+                    np.std(deque_man_list), np.average(deque_man_list)]
+
+            if t[1] > std_list[counter][1]-std_list[counter][0] and t[1] < std_list[counter][1]+std_list[counter][0]:
                 # print(f'this is t1 IF {t[1]}, ')
                 fixed_ts[counter] = [t[0], t[1], t[2]]
             else:
                 # print(f'this is t1 ELSE {t[1]}, and avrg is {std_list[counter][1]}')
-                fixed_ts[counter] = [t[0], std_list[counter][1], t[2]] #put avrg timestamp
-            counter+=1
+                fixed_ts[counter] = [t[0], std_list[counter]
+                                     [1], t[2]]  # put avrg timestamp
+            counter += 1
+
         # print(deque_list)
         # print(std_list)
         return fixed_ts
@@ -63,7 +92,8 @@ def get_position(ts_with_los_prediction):
     tdoa = tdoa[0][1:]
     # print(tdoa)
     D = tdoa*c  # D is 2x1
-    print(D)
+    # print(ts_with_los_prediction)
+    # print(D)
 
     D = D.reshape(len(ts_with_los_prediction)-1, 1)
     A_diff_one = np.array((A_n[0][0][0]-A_n[1:, 0]), dtype='float32')
@@ -99,12 +129,8 @@ def get_position(ts_with_los_prediction):
     return position
 
 
-
 while True:
-    # time.sleep(0.5)
-    ts_with_los_pred = timestamp_filter()
-    if ts_with_los_pred != None:
-        print(get_position(ts_with_los_pred))
-        
-
-
+    time.sleep(0.5)
+    # print(timestamp_filter_modif())
+    ts_with_los_pred = timestamp_filter_modif()
+    print(get_position(ts_with_los_pred))
