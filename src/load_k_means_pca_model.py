@@ -7,6 +7,8 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 from Managers.Mqtt_manager import Mqtt_Manager
 from Core_functions.hub_of_functions import *
+from Managers.Deque_manager import Deque_manager
+import time
 
 
 
@@ -50,7 +52,11 @@ else:
     'for multiple data'
     window_counter = 0
     list_of_features = ["RX_level", "RX_difference"]
+    deque_list = [0]*len(list_of_features)
+    for i in range(len(list_of_features)):
+        deque_list[i] = Deque_manager(acquisition_number)
     while True:
+        raw_data = mqtt_conn.processed_data[:] if mqtt_conn.processed_data else [0, 0]
         'this is to test data'
         # transmission = deque_manager(0, acquisition_number, mqtt_conn)
         # RX_level = deque_manager(1, acquisition_number, mqtt_conn)
@@ -59,24 +65,29 @@ else:
         # print(raw_data)
         "<<<<<<<<<"
 
-        RX_level = deque_manager(0, acquisition_number, mqtt_conn, counter=1)
-        RX_difference = deque_manager(1, acquisition_number, mqtt_conn)
-        # RX_difference = [0,2,2,2]#this is test
+        # RX_level = deque_manager(0, acquisition_number, mqtt_conn, counter=1)
+        # RX_difference = deque_manager(1, acquisition_number, mqtt_conn)
+
+        time.sleep(0.1)
+        deque_list[0].append_data(raw_data[0])
+        deque_list[1].append_data(raw_data[1])
+        RX_level = deque_list[0].get_data_list()
+        RX_difference = deque_list[1].get_data_list()
+
         raw_data = np.concatenate((RX_level, RX_difference), axis=0)
-        # print(RX_level)
+        # print(raw_data)
         if use_scaler:
             scaled_data = scaler.transform([raw_data])
             df = pca_model.transform(scaled_data)
             # print(scaled_data)
             # print(df)
         else:
-            df = pca_model.transform([raw_data])
-        # print(df)
+            if len(raw_data)==acquisition_number*len(list_of_features):
+                df = pca_model.transform([raw_data])
         window_counter += 1
         if window_counter == acquisition_number:
-            # print(new_data)
             pred = k_means_model.predict(df)
             mqtt_conn.publish("LOS", f'{pred}')
-            # print(pred)
+            print(pred)
             window_counter = 0
 

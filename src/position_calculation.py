@@ -26,8 +26,6 @@ class Position_finder:
         self.pca_wait_flag = True
         self.vanilla_ts_pred = None
 
-        # self.mqtt_ = Mqtt_Manager(broker_address, 'id_toa_los')
-
         self.fixed_ts = [0]*len(self.anchor_postion_list)
 
         self.deque_list = [0]*len(self.anchor_postion_list)
@@ -104,11 +102,10 @@ class Position_finder:
             if t[-1] == los:  # LOS
                 self.deque_list[counter].append_data(t[1])
 
-            if t[1] > self.deque_list[counter].get_std_avrg()[1]-self.deque_list[counter].get_std_avrg()[0] and t[1] < self.deque_list[counter].get_std_avrg()[1]+self.deque_list[counter].get_std_avrg()[0]:
+            if t[1] > self.deque_list[counter].get_avrg()-self.deque_list[counter].get_std() and t[1] < self.deque_list[counter].get_avrg()+self.deque_list[counter].get_std():
                 self.fixed_ts[counter] = [t[0], t[1], t[2]]
             else:
-                self.fixed_ts[counter] = [t[0], self.deque_list[counter].get_std_avrg()[
-                    1], t[2]]  # put avrg timestamp
+                self.fixed_ts[counter] = [t[0], self.deque_list[counter].get_avrg(), t[2]]  # put avrg timestamp
             counter += 1
         return self.fixed_ts
 

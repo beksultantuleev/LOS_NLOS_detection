@@ -19,8 +19,11 @@ class Deque_manager():
         self.std = np.std(self.data_list)
         self.avg = np.average(self.data_list)
 
-    def get_std_avrg(self):
-        return (self.std, self.avg)
+    def get_std(self):
+        return self.std
+    
+    def get_avrg(self):
+        return self.avg
 
 if __name__=="__main__":
     test = Deque_manager(10)
@@ -29,6 +32,6 @@ if __name__=="__main__":
         time.sleep(0.5)
         test.append_data(counter)
         print(test.get_data_list())
-        # print(test.get_std_avrg())
+        print(test.get_avrg())
         counter+=1
 

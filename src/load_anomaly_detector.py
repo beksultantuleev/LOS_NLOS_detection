@@ -15,6 +15,7 @@ from keras.models import load_model
 from Managers.Mqtt_manager import Mqtt_Manager
 from Core_functions.hub_of_functions import *
 import joblib
+from Managers.Deque_manager import Deque_manager
 
 single_data = False
 use_scaler = False
@@ -76,19 +77,31 @@ if single_data:
 else:
     'with multiple data'
     window_counter = 0
+    list_of_features = ["RX_level", "RX_difference"]
+    deque_list = [0]*len(list_of_features)
+    for i in range(len(list_of_features)):
+        deque_list[i] = Deque_manager(acquisition_number)
     while True:
-        RX_level = deque_manager(
-            0, acquisition_number, mqtt_conn)
-        RX_difference = deque_manager(
-            1, acquisition_number, mqtt_conn)
+        # RX_level = deque_manager(
+        #     0, acquisition_number, mqtt_conn)
+        # RX_difference = deque_manager(
+        #     1, acquisition_number, mqtt_conn)
+        raw_data = mqtt_conn.processed_data[:] if mqtt_conn.processed_data else [0, 0]
+
+        time.sleep(0.1)
+        deque_list[0].append_data(raw_data[0])
+        deque_list[1].append_data(raw_data[1])
+        RX_level = deque_list[0].get_data_list()
+        RX_difference = deque_list[1].get_data_list() 
+
+
         raw_data = ((np.concatenate((RX_level, RX_difference),
                     axis=0)) - min_val) / (max_val - min_val)
-        window_counter += 1
-        # 'put here a window counter'
-        if window_counter == acquisition_number:
-            preds = predict(autoencoder, [raw_data], threshold)
-            print(preds)
-            # print(raw_data)
-            msg = [1] if np.array(preds)[0] else [0]
-            mqtt_conn.publish("LOS", f'{msg}')
-            window_counter = 0
+        if len(raw_data) == acquisition_number*len(list_of_features):
+            window_counter += 1
+            if window_counter == acquisition_number:
+                preds = predict(autoencoder, [raw_data], threshold)
+                print(preds)
+                msg = [1] if np.array(preds)[0] else [0]
+                mqtt_conn.publish("LOS", f'{msg}')
+                window_counter = 0

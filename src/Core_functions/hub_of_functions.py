@@ -42,10 +42,10 @@ def deque_manager(number, size, mqtt_conn, counter = None):
         time.sleep(0.02) #to see updates in deques 0.05 is fine
         # mqtt_data = mqtt_conn.processed_data[number] if mqtt_conn.processed_data else 0
 
-        if counter!=None:
-            mqtt_data = mqtt_conn.processed_data[counter][number] if mqtt_conn.processed_data else 0
-        else:
-            mqtt_data = mqtt_conn.processed_data[number] if mqtt_conn.processed_data else 0
+        # if counter!=None:
+        #     mqtt_data = mqtt_conn.processed_data[counter][number] if mqtt_conn.processed_data else 0
+        # else:
+        mqtt_data = mqtt_conn.processed_data[number] if mqtt_conn.processed_data else 0
         # print(f"this is mqtt data >> {mqtt_data}")
         # deque_test.appendleft(mqtt_data)
         deque_test.append(mqtt_data)
