@@ -6,12 +6,14 @@ import time
 import joblib
 from Managers.Mqtt_manager import Mqtt_Manager
 from Managers.Deque_manager import Deque_manager
+from Core_functions.hub_of_functions import *
+import tensorflow as tf
+from keras.models import load_model
 
 
 class Position_finder:
     def __init__(self, anchor_postion_list=[]):
         broker_address = "192.168.0.119"
-        print("creating new instance")
         self.client = mqtt.Client('P1')  # create new instance
         self.client.connect(broker_address)  # connect to broker
         self.client.subscribe([("topic/#", 0)])
@@ -20,17 +22,31 @@ class Position_finder:
         self.position = []
         self.anchor_postion_list = anchor_postion_list
         self.amount_of_anchors = len(self.anchor_postion_list)
-        self.ts_with_los_prediction = [0]*self.amount_of_anchors
         self.raw_anchors_data = [0]*self.amount_of_anchors
         self.processed_anchors_data = None
-        self.pca_wait_flag = True
-        self.vanilla_ts_pred = None
 
-        self.fixed_ts = [0]*len(self.anchor_postion_list)
-
+        self.modified_ts = [0]*len(self.anchor_postion_list)
         self.deque_list = [0]*len(self.anchor_postion_list)
         for i in range(len(self.anchor_postion_list)):
             self.deque_list[i] = Deque_manager(10)
+        
+        "pca k means"
+        self.pca_wait_flag = True
+        self.vanilla_ts = None
+        self.pca_model = joblib.load('trained_models/pca.sav')
+        self.k_means_model = joblib.load('trained_models/k_means.sav')
+
+        "autoencoder"
+        self.autoencoder = load_model('trained_models/anomaly_detection_model')
+        self.path = 'src/Training/logs/anomaly_detection/logs_Single_data_input.txt'
+        self.threshold = 0.03#value_extractor("Threshold:", path)
+        self.min_val = value_extractor("Min_val:", self.path)
+        self.max_val = value_extractor("Max_val:", self.path)
+        "grand model"
+        self.data_mitigation = np.empty(shape=(0, self.amount_of_anchors))
+        self.data_detection = np.empty(shape=(0, self.amount_of_anchors))
+        
+        self.pred_from_mitigation = [np.nan]*self.amount_of_anchors
 
     def on_message(self, client, userdata, message):
         msg = f'{message.payload.decode("utf")}'
@@ -48,66 +64,57 @@ class Position_finder:
                     self.raw_anchors_data[counter] = res
                 counter += 1
 
-    def msg_splitter(self, anchor_data):
-        tag_id = anchor_data[0]
-        msg_num = anchor_data[1]
-        toa = anchor_data[2]
-        los = anchor_data[3]
-        # rssi = anchor_data[3]
-        # rx_diff = anchor_data[4]
-        # return tag_id, msg_num, toa, rssi, rx_diff
-        return tag_id, msg_num, toa, los
 
     def pca_k_means_model(self):
         if self.pca_wait_flag:
             time.sleep(0.9)
             self.pca_wait_flag = False
-        raw_anchors_data = np.array(self.raw_anchors_data)
-
-        raw_data = np.array(raw_anchors_data)[:, -2:]
-        pca_model = joblib.load('trained_models/pca.sav')
-        k_means_model = joblib.load('trained_models/k_means.sav')
-        df = pca_model.transform(raw_data)
-        pred = k_means_model.predict(df)
+        raw_anchors_data = np.delete(np.array(self.raw_anchors_data), 1, 1)
+        self.vanilla_ts = raw_anchors_data[:, :-2]
+        input_data = np.array(raw_anchors_data)[:, -2:]
+        df = self.pca_model.transform(input_data)
+        pred = self.k_means_model.predict(df)
         self.processed_anchors_data = np.c_[raw_anchors_data[:, :-2], pred]
-        self.vanilla_ts_pred = np.delete(self.processed_anchors_data, 1, 1)
+        
+      
 
-        # self.processed_anchors_data = np.delete(self.processed_anchors_data, 1, 1)
-        # print(self.processed_anchor_data)
+    def anomaly_detection(self): 
+        "true or 1 is LOS"
+        raw_anchors_data = np.delete(np.array(self.raw_anchors_data), 1, 1)
+        self.vanilla_ts = raw_anchors_data[:, :-2]
+        raw_data = np.array(raw_anchors_data)[:, -2:]
+        input_data = (np.array(raw_data) -
+                        self.min_val) / (self.max_val - self.min_val)
+        pred = predict_anomaly_detection(self.autoencoder, input_data, self.threshold)
+        self.processed_anchors_data = np.c_[raw_anchors_data[:, :-2], pred]
+        self.data_detection = np.append(self.data_detection, np.expand_dims(
+                    pred, axis=0), axis=0)
+        # print(f'1 from detection {pred}')
 
-        counter = 0
-        for i in self.processed_anchors_data:
-            tag_id, msg_num, toa, los = self.msg_splitter(
-                anchor_data=i)
-            self.ts_with_los_prediction[counter] = [tag_id, toa, los]
-            counter += 1
-        self.ts_with_los_prediction = np.array(self.ts_with_los_prediction)
 
-        # ts_with_los_prediction_python_list = []
-        # for ts in self.ts_with_los_prediction:
-        #     ts_with_los_prediction_python_list.append(list(ts))
-        # self.client.publish(
-        #     'id_toa_los', f"{ts_with_los_prediction_python_list}")
-        # self.client.publish('id_toa_los', f"{self.ts_with_los_prediction}")
-        # print(self.ts_with_los_prediction)
-        # print(ts_with_los_prediction_python_list)
-
-    def timestamp_filter(self):
-        los = 0
+    def timestamp_filter(self, los = 1):
         # if self.mqtt_.processed_data:
         # print(self.deque_list[0].get_std_avrg())
         # print(self.deque_list[0].get_data_list())
         counter = 0
-        for t in self.ts_with_los_prediction:
+        for t in self.processed_anchors_data:
             if t[-1] == los:  # LOS
                 self.deque_list[counter].append_data(t[1])
+                
 
             if t[1] > self.deque_list[counter].get_avrg()-self.deque_list[counter].get_std() and t[1] < self.deque_list[counter].get_avrg()+self.deque_list[counter].get_std():
-                self.fixed_ts[counter] = [t[0], t[1], t[2]]
+                self.modified_ts[counter] = [t[0], t[1], t[2]]
+                
+                "add logic of global function"
+                self.pred_from_mitigation[counter] = 1
             else:
-                self.fixed_ts[counter] = [t[0], self.deque_list[counter].get_avrg(), t[2]]  # put avrg timestamp
+                self.modified_ts[counter] = [t[0], self.deque_list[counter].get_avrg(), t[2]]  # put avrg timestamp
+                self.pred_from_mitigation[counter] = 0
             counter += 1
-        return self.fixed_ts
+        # print(f"2 from mitigation {self.pred_from_mitigation}")
+        self.data_mitigation = np.append(self.data_mitigation, np.expand_dims(self.pred_from_mitigation, axis=0), axis=0)
+        
+        return self.modified_ts
 
     def get_position(self, ts_with_los_prediction):
         c = 299792458
@@ -175,11 +182,29 @@ if __name__ == "__main__":
     test = Position_finder(anchor_postion_list=anchors_pos)
     while True:
         time.sleep(0.2)
-        test.pca_k_means_model()
-        # print(test.timestamp_filter())
+        test.anomaly_detection()
         ts_with_pred = test.timestamp_filter()
-        # print(ts_with_pred)
-        if ts_with_pred != None:
-            print(f"1 filtered> {test.get_position(ts_with_pred)} \t{[ts_with_pred[0][-1], ts_with_pred[1][-1], ts_with_pred[2][-1]]}")
-            print(f"2 original> {test.get_position(test.vanilla_ts_pred)} \t{[test.vanilla_ts_pred[0][-1], test.vanilla_ts_pred[1][-1], test.vanilla_ts_pred[2][-1]]}")
+        # print(test.get_position(ts_with_pred))
+        test.get_position(ts_with_pred)
+        # print(test.test_)
+        # print(test.data_mitigation)
+        print(f'mitigation {test.data_mitigation.shape}')
+        print(f'detection {test.data_detection.shape}')
+
+
+    #     "anomaly detection"
+    #     # time.sleep(0.2)
+    #     test.anomaly_detection()
+    #     ts_with_pred = test.timestamp_filter()
+    #     print(f"1 filtered> {test.get_position(ts_with_pred)} \t{[ts_with_pred[0][-1], ts_with_pred[1][-1], ts_with_pred[2][-1]]}")
+    #     print(f"2 original> {test.get_position(test.vanilla_ts)} ")
+
+        # "working test, pca kmeans"
+        # test.pca_k_means_model()
+        # # print(test.timestamp_filter())
+        # ts_with_pred = test.timestamp_filter()
+        # # print(ts_with_pred)
+        # if ts_with_pred != None:
+        #     print(f"1 filtered> {test.get_position(ts_with_pred)} \t{[ts_with_pred[0][-1], ts_with_pred[1][-1], ts_with_pred[2][-1]]}")
+        #     print(f"2 original> {test.get_position(test.vanilla_ts)} ")
 

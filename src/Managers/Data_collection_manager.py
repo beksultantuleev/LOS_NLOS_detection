@@ -16,9 +16,9 @@ class Listener():
         self.data_folder = 'data'
         self.dataset_name = ""
         self.acquisition_number = 1
-        # self.list_of_features = ["RX_level", "RX_difference"]
-        self.list_of_features = ["RX_level",
-                                 "RX_difference", "CIR", "F1", "F2", "F3"]
+        self.list_of_features = ["RX_level", "RX_difference"]
+        # self.list_of_features = ["RX_level",
+        #                          "RX_difference", "CIR", "F1", "F2", "F3"]
         self.via_port_reader = via_port_reader
         self.allInOne_conn = Mqtt_Manager(
             "localhost", "allInOne")

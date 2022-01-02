@@ -3,6 +3,8 @@ import pandas as pd
 import collections
 import time
 from Managers.Mqtt_manager import Mqtt_Manager
+import tensorflow as tf
+
 
 'data transformation'
 def multiInputConfiguration(dataset, list_of_independent_vars, acquisition="acquisition"):
@@ -25,6 +27,13 @@ def acquisition_modifier(acquisition_number, length_of_acquisitions):
         lis.append(i)
     lis = sorted(lis*acquisition_number)[:length_of_acquisitions]
     return lis
+
+def predict_anomaly_detection(model, data, threshold):
+    reconstructions = model(data)
+    loss = tf.keras.losses.mae(reconstructions, data)
+    result = np.array(tf.math.less(loss, threshold))
+    return result.astype(int)
+    # return tf.math.less(loss, threshold)
 
 def value_extractor(pattern, path):
     with open(path) as f:
