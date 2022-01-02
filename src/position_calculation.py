@@ -29,7 +29,7 @@ class Position_finder:
         self.deque_list = [0]*len(self.anchor_postion_list)
         for i in range(len(self.anchor_postion_list)):
             self.deque_list[i] = Deque_manager(10)
-        
+
         "pca k means"
         self.pca_wait_flag = True
         self.vanilla_ts = None
@@ -39,14 +39,16 @@ class Position_finder:
         "autoencoder"
         self.autoencoder = load_model('trained_models/anomaly_detection_model')
         self.path = 'src/Training/logs/anomaly_detection/logs_Single_data_input.txt'
-        self.threshold = 0.03#value_extractor("Threshold:", path)
+        self.threshold = 0.03  # value_extractor("Threshold:", path)
         self.min_val = value_extractor("Min_val:", self.path)
         self.max_val = value_extractor("Max_val:", self.path)
         "grand model"
         self.data_mitigation = np.empty(shape=(0, self.amount_of_anchors))
         self.data_detection = np.empty(shape=(0, self.amount_of_anchors))
-        
         self.pred_from_mitigation = [np.nan]*self.amount_of_anchors
+        self.data_size = 50
+        self.final_data = None
+        self.data_collection_complete = False
 
     def on_message(self, client, userdata, message):
         msg = f'{message.payload.decode("utf")}'
@@ -64,7 +66,6 @@ class Position_finder:
                     self.raw_anchors_data[counter] = res
                 counter += 1
 
-
     def pca_k_means_model(self):
         if self.pca_wait_flag:
             time.sleep(0.9)
@@ -75,45 +76,54 @@ class Position_finder:
         df = self.pca_model.transform(input_data)
         pred = self.k_means_model.predict(df)
         self.processed_anchors_data = np.c_[raw_anchors_data[:, :-2], pred]
-        
-      
+        if not self.data_collection_complete:
+            self.data_detection = np.append(self.data_detection, np.expand_dims(
+                pred, axis=0), axis=0)
 
-    def anomaly_detection(self): 
+        # print(f'1 from detection {pred}')
+
+    def anomaly_detection(self):
         "true or 1 is LOS"
         raw_anchors_data = np.delete(np.array(self.raw_anchors_data), 1, 1)
         self.vanilla_ts = raw_anchors_data[:, :-2]
         raw_data = np.array(raw_anchors_data)[:, -2:]
         input_data = (np.array(raw_data) -
-                        self.min_val) / (self.max_val - self.min_val)
-        pred = predict_anomaly_detection(self.autoencoder, input_data, self.threshold)
+                      self.min_val) / (self.max_val - self.min_val)
+        pred = predict_anomaly_detection(
+            self.autoencoder, input_data, self.threshold)
         self.processed_anchors_data = np.c_[raw_anchors_data[:, :-2], pred]
-        self.data_detection = np.append(self.data_detection, np.expand_dims(
-                    pred, axis=0), axis=0)
+
+        if not self.data_collection_complete:
+            self.data_detection = np.append(self.data_detection, np.expand_dims(
+                pred, axis=0), axis=0)
         # print(f'1 from detection {pred}')
 
-
-    def timestamp_filter(self, los = 1):
-        # if self.mqtt_.processed_data:
-        # print(self.deque_list[0].get_std_avrg())
-        # print(self.deque_list[0].get_data_list())
+    def timestamp_filter(self, los=1):
         counter = 0
         for t in self.processed_anchors_data:
             if t[-1] == los:  # LOS
                 self.deque_list[counter].append_data(t[1])
-                
 
             if t[1] > self.deque_list[counter].get_avrg()-self.deque_list[counter].get_std() and t[1] < self.deque_list[counter].get_avrg()+self.deque_list[counter].get_std():
                 self.modified_ts[counter] = [t[0], t[1], t[2]]
-                
-                "add logic of global function"
+                'prediction of mitigation'
                 self.pred_from_mitigation[counter] = 1
             else:
-                self.modified_ts[counter] = [t[0], self.deque_list[counter].get_avrg(), t[2]]  # put avrg timestamp
+                self.modified_ts[counter] = [
+                    t[0], self.deque_list[counter].get_avrg(), t[2]]  # put avrg timestamp
                 self.pred_from_mitigation[counter] = 0
             counter += 1
         # print(f"2 from mitigation {self.pred_from_mitigation}")
-        self.data_mitigation = np.append(self.data_mitigation, np.expand_dims(self.pred_from_mitigation, axis=0), axis=0)
-        
+        if not self.data_collection_complete:
+            self.data_mitigation = np.append(self.data_mitigation, np.expand_dims(
+                self.pred_from_mitigation, axis=0), axis=0)
+            if len(self.data_mitigation) == self.data_size:
+                self.data_collection_complete = True
+                'save data '
+                self.final_data = np.append(
+                    self.data_detection, self.data_mitigation, axis=1)
+                np.savetxt(f"grand_final_data_{self.data_size}.csv", self.final_data, delimiter=",")
+
         return self.modified_ts
 
     def get_position(self, ts_with_los_prediction):
@@ -184,12 +194,7 @@ if __name__ == "__main__":
         time.sleep(0.2)
         test.anomaly_detection()
         ts_with_pred = test.timestamp_filter()
-        # print(test.get_position(ts_with_pred))
-        test.get_position(ts_with_pred)
-        # print(test.test_)
-        # print(test.data_mitigation)
-        print(f'mitigation {test.data_mitigation.shape}')
-        print(f'detection {test.data_detection.shape}')
+        print(test.get_position(ts_with_pred))
 
 
     #     "anomaly detection"
@@ -207,4 +212,3 @@ if __name__ == "__main__":
         # if ts_with_pred != None:
         #     print(f"1 filtered> {test.get_position(ts_with_pred)} \t{[ts_with_pred[0][-1], ts_with_pred[1][-1], ts_with_pred[2][-1]]}")
         #     print(f"2 original> {test.get_position(test.vanilla_ts)} ")
-
