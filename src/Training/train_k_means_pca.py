@@ -3,7 +3,6 @@ import pandas as pd
 from sklearn.cluster import KMeans
 import numpy as np
 from sklearn.decomposition import PCA
-from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from collections import Counter
 from sklearn.preprocessing import StandardScaler
@@ -67,7 +66,7 @@ else:
 
 
 'k means'
-kmeans = KMeans(n_clusters=num_of_classes)
+kmeans = KMeans(n_clusters=num_of_classes, random_state=42)
 kmeans.fit(df)
 label = kmeans.predict(df)
 

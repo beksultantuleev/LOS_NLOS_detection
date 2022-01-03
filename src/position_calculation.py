@@ -9,6 +9,9 @@ from Managers.Deque_manager import Deque_manager
 from Core_functions.hub_of_functions import *
 import tensorflow as tf
 from keras.models import load_model
+from Managers.MultiOutputClastering import MultiOutputClustering
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.multioutput import MultiOutputClassifier
 
 
 class Position_finder:
@@ -42,11 +45,15 @@ class Position_finder:
         self.threshold = 0.03  # value_extractor("Threshold:", path)
         self.min_val = value_extractor("Min_val:", self.path)
         self.max_val = value_extractor("Max_val:", self.path)
+        
         "grand model"
+        self.grand_model = None
         self.data_mitigation = np.empty(shape=(0, self.amount_of_anchors))
         self.data_detection = np.empty(shape=(0, self.amount_of_anchors))
         self.pred_from_mitigation = [np.nan]*self.amount_of_anchors
-        self.data_size = 50
+        self.pred_from_grand_model = None
+        self.pred_from_detection = None
+        self.data_size = 100
         self.final_data = None
         self.data_collection_complete = False
 
@@ -74,11 +81,11 @@ class Position_finder:
         self.vanilla_ts = raw_anchors_data[:, :-2]
         input_data = np.array(raw_anchors_data)[:, -2:]
         df = self.pca_model.transform(input_data)
-        pred = self.k_means_model.predict(df)
-        self.processed_anchors_data = np.c_[raw_anchors_data[:, :-2], pred]
+        self.pred_from_detection = self.k_means_model.predict(df)
+        self.processed_anchors_data = np.c_[raw_anchors_data[:, :-2], self.pred_from_detection]
         if not self.data_collection_complete:
             self.data_detection = np.append(self.data_detection, np.expand_dims(
-                pred, axis=0), axis=0)
+                self.pred_from_detection, axis=0), axis=0)
 
         # print(f'1 from detection {pred}')
 
@@ -89,13 +96,13 @@ class Position_finder:
         raw_data = np.array(raw_anchors_data)[:, -2:]
         input_data = (np.array(raw_data) -
                       self.min_val) / (self.max_val - self.min_val)
-        pred = predict_anomaly_detection(
+        self.pred_from_detection = predict_anomaly_detection(
             self.autoencoder, input_data, self.threshold)
-        self.processed_anchors_data = np.c_[raw_anchors_data[:, :-2], pred]
+        self.processed_anchors_data = np.c_[raw_anchors_data[:, :-2], self.pred_from_detection]
 
         if not self.data_collection_complete:
             self.data_detection = np.append(self.data_detection, np.expand_dims(
-                pred, axis=0), axis=0)
+                self.pred_from_detection, axis=0), axis=0)
         # print(f'1 from detection {pred}')
 
     def timestamp_filter(self, los=1):
@@ -122,9 +129,28 @@ class Position_finder:
                 'save data '
                 self.final_data = np.append(
                     self.data_detection, self.data_mitigation, axis=1)
-                np.savetxt(f"grand_final_data_{self.data_size}.csv", self.final_data, delimiter=",")
+                filename = f"grand_final_data_{self.data_size}.csv"
+                np.savetxt(filename, self.final_data, delimiter=",")
+                
+                
+                'model training process'
+                print("Model training process is started")
+                rf = RandomForestClassifier(max_depth=2)
+                Multi_output_clustering = MultiOutputClustering(data_for_training=self.final_data)
+                Multi_output_clustering.label_creation()
+                model_location = 'multioutput_model.sav'
+                Multi_output_clustering.multiOutputClassifier(rf, filename=model_location)
+                self.grand_model = joblib.load(model_location)
+        else:
+            self.launch_grand_model()
 
         return self.modified_ts
+
+    def launch_grand_model(self):
+        input_data = np.concatenate([self.pred_from_detection, self.pred_from_mitigation], axis=0)
+        # print(f'this is input data')
+        self.pred_from_grand_model = self.grand_model.predict([input_data])
+        print(f'grand model {self.pred_from_grand_model} input_data {input_data}')
 
     def get_position(self, ts_with_los_prediction):
         c = 299792458
@@ -191,10 +217,11 @@ if __name__ == "__main__":
     # print(A_n1.shape)
     test = Position_finder(anchor_postion_list=anchors_pos)
     while True:
+        'with grand model'
         time.sleep(0.2)
         test.anomaly_detection()
         ts_with_pred = test.timestamp_filter()
-        print(test.get_position(ts_with_pred))
+        test.get_position(ts_with_pred)
 
 
     #     "anomaly detection"

@@ -14,6 +14,8 @@ import pandas as pd
 
 
 'not in use'
+a = [1,2,3]
+b = [4,5,6]
 
-data = pd.read_csv('grand_final_data_50.csv', header=None)
-print(data)
+print(np.concatenate((a,b), axis=0))
+
