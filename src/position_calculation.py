@@ -31,7 +31,7 @@ class Position_finder:
         self.modified_ts = [0]*len(self.anchor_postion_list)
         self.deque_list = [0]*len(self.anchor_postion_list)
         for i in range(len(self.anchor_postion_list)):
-            self.deque_list[i] = Deque_manager(10)
+            self.deque_list[i] = Deque_manager(15)
 
         "pca k means"
         self.pca_wait_flag = True
@@ -50,7 +50,7 @@ class Position_finder:
         self.grand_model = None
         self.data_mitigation = np.empty(shape=(0, self.amount_of_anchors))
         self.data_detection = np.empty(shape=(0, self.amount_of_anchors))
-        self.pred_from_mitigation = [np.nan]*self.amount_of_anchors
+        self.pred_from_mitigation = [0]*self.amount_of_anchors
         self.pred_from_grand_model = None
         self.pred_from_detection = None
         self.data_size = 100
@@ -105,22 +105,45 @@ class Position_finder:
                 self.pred_from_detection, axis=0), axis=0)
         # print(f'1 from detection {pred}')
 
-    def timestamp_filter(self, los=1):
+    def simple_timestamp_filter(self, los=1):
         counter = 0
         for t in self.processed_anchors_data:
             if t[-1] == los:  # LOS
                 self.deque_list[counter].append_data(t[1])
+                # self.modified_ts[counter] = [t[0], t[1], t[2]]
+                'try to put average'
+                self.modified_ts[counter] = [t[0], self.deque_list[counter].get_avrg(), t[2]]
+            # else:
+            #     # self.modified_ts[counter] = [t[0], self.deque_list[counter].get_last_value(), t[2]]
+            #     self.modified_ts[counter] = [t[0], self.deque_list[counter].get_avrg(), t[2]]
+            counter += 1
+        return self.modified_ts
 
+    def smart_timestamp_filter(self, los=1):
+        counter = 0
+        for t in self.processed_anchors_data:
+            'get right std and avrgs'
+            if t[-1] == los:  # LOS
+                self.deque_list[counter].append_data(t[1])
+            'apply those stds and avrgs'
             if t[1] > self.deque_list[counter].get_avrg()-self.deque_list[counter].get_std() and t[1] < self.deque_list[counter].get_avrg()+self.deque_list[counter].get_std():
-                self.modified_ts[counter] = [t[0], t[1], t[2]]
                 'prediction of mitigation'
                 self.pred_from_mitigation[counter] = 1
+                if t[-1] == los:
+                    # self.modified_ts[counter] = [t[0], t[1], t[2]]
+                    self.modified_ts[counter] = [t[0], self.deque_list[counter].get_avrg(), t[2]]
+                # else:
+                #     self.modified_ts[counter] = [t[0], self.deque_list[counter].get_last_value(), t[2]]
             else:
+                self.pred_from_mitigation[counter] = 0
+
                 self.modified_ts[counter] = [
                     t[0], self.deque_list[counter].get_avrg(), t[2]]  # put avrg timestamp
-                self.pred_from_mitigation[counter] = 0
+                # self.modified_ts[counter] = [
+                #     t[0], self.deque_list[counter].get_last_value(), t[2]] #put last los value
+            # print(f"std>> {self.deque_list[counter].get_std()}")
             counter += 1
-        # print(f"2 from mitigation {self.pred_from_mitigation}")
+        
         if not self.data_collection_complete:
             self.data_mitigation = np.append(self.data_mitigation, np.expand_dims(
                 self.pred_from_mitigation, axis=0), axis=0)
@@ -129,16 +152,17 @@ class Position_finder:
                 'save data '
                 self.final_data = np.append(
                     self.data_detection, self.data_mitigation, axis=1)
+                'further saving data'
                 filename = f"grand_final_data_{self.data_size}.csv"
                 np.savetxt(filename, self.final_data, delimiter=",")
                 
                 
-                'model training process'
+                'Grand model training process'
                 print("Model training process is started")
                 rf = RandomForestClassifier(max_depth=2)
                 Multi_output_clustering = MultiOutputClustering(data_for_training=self.final_data)
                 Multi_output_clustering.label_creation()
-                model_location = 'multioutput_model.sav'
+                model_location = 'trained_models/multioutput_model.sav'
                 Multi_output_clustering.multiOutputClassifier(rf, filename=model_location)
                 self.grand_model = joblib.load(model_location)
         else:
@@ -150,7 +174,7 @@ class Position_finder:
         input_data = np.concatenate([self.pred_from_detection, self.pred_from_mitigation], axis=0)
         # print(f'this is input data')
         self.pred_from_grand_model = self.grand_model.predict([input_data])
-        print(f'grand model {self.pred_from_grand_model} input_data {input_data}')
+        # print(f'grand model {self.pred_from_grand_model} input_data {input_data}')
 
     def get_position(self, ts_with_los_prediction):
         c = 299792458
@@ -206,30 +230,50 @@ class Position_finder:
         self.position = [[x_t[0][0], x_t[1][0], x_t[2][0]], tag_id]
         return self.position
 
+    def publish(self):
+        'first is filtered and second is original'
+        ts_with_pred = self.smart_timestamp_filter()
+        # ts_with_pred = self.simple_timestamp_filter()
+        filtered = self.get_position(ts_with_pred)[0]
+        original = self.get_position(self.vanilla_ts)[0]
+        payload_ = f'[{filtered}, {original}]'
+        self.client.publish('positions', payload_)
+        print(f'1 filtered {filtered} \t {np.concatenate([self.pred_from_detection, self.pred_from_mitigation], axis=0)} {self.pred_from_grand_model}')
+        # print(f'1 filtered {filtered} \t {self.pred_from_detection} {self.pred_from_grand_model}')
+        print(f'2 original {original}')
 
 if __name__ == "__main__":
 
-    A_n1 = np.array([[0], [1], [1.8]])
-    A_n2 = np.array([[6], [0], [2]])
-    A_n3 = np.array([[3], [3.5], [1]])  # master
+    A_n1 = np.array([[2], [2], [0.9]])
+    A_n2 = np.array([[0], [0], [0.5]])
+    A_n3 = np.array([[5], [0], [1.8]])  # master
     # A_n4 = np.array([[3], [5], [1]])  # master
     anchors_pos = np.array([A_n1, A_n2, A_n3])
     # print(A_n1.shape)
     test = Position_finder(anchor_postion_list=anchors_pos)
     while True:
+        # "testing ts deque"
+        # time.sleep(0.2)
+        # test.anomaly_detection()
+        # # print(test.timestamp_filter())
+        # # ts_with_pred = test.simple_timestamp_filter()
+        # ts_with_pred = test.smart_timestamp_filter()
+        # print(f"1 filtered> {test.get_position(ts_with_pred)} \t{[ts_with_pred[0][-1], ts_with_pred[1][-1], ts_with_pred[2][-1]]}")
+        # print(f"2 original> {test.get_position(test.vanilla_ts)} ")
+
         'with grand model'
-        time.sleep(0.2)
-        test.anomaly_detection()
-        ts_with_pred = test.timestamp_filter()
-        test.get_position(ts_with_pred)
+        time.sleep(0.1)
+        # test.anomaly_detection()
+        test.pca_k_means_model()
+        test.publish()
 
 
-    #     "anomaly detection"
-    #     # time.sleep(0.2)
-    #     test.anomaly_detection()
-    #     ts_with_pred = test.timestamp_filter()
-    #     print(f"1 filtered> {test.get_position(ts_with_pred)} \t{[ts_with_pred[0][-1], ts_with_pred[1][-1], ts_with_pred[2][-1]]}")
-    #     print(f"2 original> {test.get_position(test.vanilla_ts)} ")
+        "anomaly detection"
+        # time.sleep(0.2)
+        # test.anomaly_detection()
+        # ts_with_pred = test.timestamp_filter()
+        # print(f"1 filtered> {test.get_position(ts_with_pred)} \t{[ts_with_pred[0][-1], ts_with_pred[1][-1], ts_with_pred[2][-1]]}")
+        # print(f"2 original> {test.get_position(test.vanilla_ts)} ")
 
         # "working test, pca kmeans"
         # test.pca_k_means_model()

@@ -24,6 +24,10 @@ class Deque_manager():
     
     def get_avrg(self):
         return self.avg
+    
+    def get_last_value(self):
+        if len(self.data_list)!=0:
+            return self.data_list[-1]
 
 if __name__=="__main__":
     test = Deque_manager(10)
