@@ -4,6 +4,7 @@ import time
 import joblib
 from numpy.core.defchararray import count
 from numpy.core.fromnumeric import std
+from tensorflow.python.ops.gen_math_ops import truncate_div_eager_fallback
 from Managers.Mqtt_manager import Mqtt_Manager
 from Core_functions.hub_of_functions import deque_manager
 from Managers.Deque_manager import Deque_manager
@@ -15,70 +16,55 @@ mqtt_ = Mqtt_Manager('192.168.0.119', 'id_toa_los')
 A_n1 = np.array([[0], [1], [1.8]])
 A_n2 = np.array([[6], [0], [2]])
 A_n3 = np.array([[3], [3.5], [1]])  # master
-# A_n4 = np.array([[3], [5], [1]])  # master
-anchor_postion_list = np.array([A_n1, A_n2, A_n3])
-
-# std_list = [0]*3
-std_list = [[0, 0], [0, 0], [0, 0]]
-fixed_ts = [0]*len(anchor_postion_list)
-
-deque_list = [0]*len(anchor_postion_list)
-for i in range(len(anchor_postion_list)):
-    deque_list[i] = Deque_manager(5)
+A_n4 = np.array([[3], [5], [1]])  # master
+anchor_postion_list = np.array([A_n1, A_n2, A_n3, A_n4])
 
 
-def timestamp_filter_modif():
-    los = 0
-    if mqtt_.processed_data:
-        # print(deque_list[0].append_data(1))
-        # print(deque_list[0].get_data_list())
-        # print(deque_list[0].get_std_avrg())
-        counter = 0
-        for t in mqtt_.processed_data:
-            if t[-1] == los:  # LOS
-                deque_list[counter].append_data(t[1])
-
-            if t[1] > deque_list[counter].get_std_avrg()[1]-deque_list[counter].get_std_avrg()[0] and t[1] < deque_list[counter].get_std_avrg()[1]+deque_list[counter].get_std_avrg()[0]:
-                fixed_ts[counter] = [t[0], t[1], t[2]]
-            else:
-                fixed_ts[counter] = [t[0], deque_list[counter].get_std_avrg()[
-                    1], t[2]]  # put avrg timestamp
-
-            counter += 1
-        return fixed_ts
-
-
-
-def timestamp_filter():
-    if mqtt_.processed_data:
-        deque_list = [0]*len(mqtt_.processed_data)
-        counter = 0
-        for t in mqtt_.processed_data:
-            if t[-1] == 0:  # LOS
-                deque_man_list = deque_manager(1, 7, mqtt_, counter)
-                deque_list[counter] = deque_man_list
-                std_list[counter] = [
-                    np.std(deque_man_list), np.average(deque_man_list)]
-
-            if t[1] > std_list[counter][1]-std_list[counter][0] and t[1] < std_list[counter][1]+std_list[counter][0]:
-                # print(f'this is t1 IF {t[1]}, ')
-                fixed_ts[counter] = [t[0], t[1], t[2]]
-            else:
-                # print(f'this is t1 ELSE {t[1]}, and avrg is {std_list[counter][1]}')
-                fixed_ts[counter] = [t[0], std_list[counter]
-                                     [1], t[2]]  # put avrg timestamp
-            counter += 1
-
-        # print(deque_list)
-        # print(std_list)
-        return fixed_ts
-
-
-def get_position(ts_with_los_prediction):
-    c = 299792458
-
+def get_position(ts_with_los_prediction, exclude_nlos=False):
+    los = 1
+    los_anchors = []
+    nlos_anchors = []
     A_n = anchor_postion_list
+    # print(np.array(ts_with_los_prediction))
+    'add logic of excluding bad anchors here'
+    if exclude_nlos:
+        number_of_anchors_for_pos_estimation = 3
+        for counter, value in enumerate(ts_with_los_prediction):
+            anchors_with_counter = np.append(value, np.array([counter]), axis=0)
+            if value[-1] == los:
+                los_anchors.append(anchors_with_counter)
+            else:
+                nlos_anchors.append(anchors_with_counter)
+        los_anchors = np.array(los_anchors)
+        nlos_anchors = np.array(nlos_anchors)
+        # print(los_anchors)
+        # print(nlos_anchors)
+        if len(los_anchors) >= number_of_anchors_for_pos_estimation:
+            los_anchor_indices = los_anchors[:, -1].astype(int)
+            A_n = A_n[los_anchor_indices, :, :]
+            ts_with_los_prediction = los_anchors[:, :-1]
+        else:
+            if len(los_anchors) != 0:
+                count = 0
+                while len(los_anchors) != number_of_anchors_for_pos_estimation:
+                    los_anchors = np.append(los_anchors, np.expand_dims(
+                        nlos_anchors[count], axis=0), axis=0)
+                    count += 1
+                los_anchor_indices = los_anchors[:, -1].astype(int)
+                # print(los_anchor_indices)
+                A_n = A_n[los_anchor_indices, :, :]
+                print(A_n)
+                ts_with_los_prediction = los_anchors[:, :-1]
+            else:
+                # num_of
+                nlos_anchor_indices = nlos_anchors[:, -1].astype(int)[:number_of_anchors_for_pos_estimation]
+                A_n = A_n[nlos_anchor_indices, :, :]
+                # print(A_n)
+                ts_with_los_prediction = nlos_anchors[:number_of_anchors_for_pos_estimation, :-1]
+                # print(ts_with_los_prediction)
+
     n = len(A_n)
+    c = 299792458
 
     toa = [0] * len(ts_with_los_prediction)
     counter = 0
@@ -88,23 +74,29 @@ def get_position(ts_with_los_prediction):
         counter += 1
 
     toa = np.array([toa])
+    # print(toa)
     tdoa = toa - toa[0][0]  # changed here
     # print(tdoa)
     tdoa = tdoa[0][1:]
     # print(tdoa)
     D = tdoa*c  # D is 2x1
-    # print(ts_with_los_prediction)
     # print(D)
 
     D = D.reshape(len(ts_with_los_prediction)-1, 1)
+    # print(D)
     A_diff_one = np.array((A_n[0][0][0]-A_n[1:, 0]), dtype='float32')
+    # print(A_diff_one)
     A_diff_two = np.array((A_n[0][1][0]-A_n[1:, 1]), dtype='float32')
+    # print(A_diff_two)
     A_diff_three = np.array((A_n[0][2][0]-A_n[1:, 2]), dtype='float32')
+    # print(A_diff_three)
 
     A = 2 * np.array([A_diff_one, A_diff_two, A_diff_three, D]).T
+    # print(A)
 
     b = D**2 + np.linalg.norm(A_n[0])**2 - np.sum(A_n[1:, :]**2, 1)
     x_t0 = np.dot(np.linalg.pinv(A), b)
+    # print(x_t0)
 
     x_t_0 = np.array([x_t0[0][0], x_t0[0][1], x_t0[0][2]])
 
@@ -130,8 +122,10 @@ def get_position(ts_with_los_prediction):
     return position
 
 
-while True:
-    time.sleep(0.5)
-    # print(timestamp_filter_modif())
-    ts_with_los_pred = timestamp_filter_modif()
-    print(get_position(ts_with_los_pred))
+# while True:
+    # time.sleep(0.5)
+ts_with_pred = [[4.0, 65549325.0, 1.0],
+                [4.0, 65549353.6, 1.0],
+                [4.0, 65549427.5, 1.0],
+                [4.0, 65549361.75, 0.0]]
+print(get_position(ts_with_pred, exclude_nlos=True))
