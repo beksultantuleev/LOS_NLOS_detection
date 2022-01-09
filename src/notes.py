@@ -26,7 +26,7 @@ nlos = np.array([[4.00000000e+00, 6.55494275e+07, 1.00000000e+00, 1.00000000e+00
 los = np.array([[4.00000000e+00, 6.55494275e+07, 1.00000000e+00, 2.00000000e+00],
                 [4.00000000e+00, 6.55493618e+07, 1.00000000e+00, 3.00000000e+00]])
 
-los = np.append(los, np.expand_dims(
-                nlos[0], axis=0), axis=0)
-print(los)
-# print(los.shape)
+t = np.float32(65549343) * np.float32(15.65e-12)
+c = 299792458
+
+print(t*c)
