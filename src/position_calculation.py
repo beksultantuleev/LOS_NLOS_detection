@@ -64,6 +64,7 @@ class Position_finder:
         for match in matches:
             res = json.loads(match.group(0))
             topics = []
+            'you can merge 2 loops below'
             for i in range(1, self.amount_of_anchors+1):
                 top_name = f'topic/{i}'
                 topics.append(top_name)
@@ -311,14 +312,14 @@ if __name__ == "__main__":
         # time.sleep(0.2)
         test.anomaly_detection()
         # # print(test.timestamp_filter())
-        ts_with_pred = test.simple_timestamp_filter()
-        ts_with_pred = test.smart_timestamp_filter()
+        # ts_with_pred = test.simple_timestamp_filter()
+        # ts_with_pred = test.smart_timestamp_filter()
         # ts_with_pred = test.smart_timestamp_filter()
         # print(ts_with_pred)
-
-        print(
-            f"1 filtered> {test.get_position(ts_with_pred, exclude_nlos=True)} \t{test.pred_from_detection}")
-        print(f"2 original> {test.get_position(test.vanilla_ts)} ")
+        print(test.pred_from_detection)
+        # print(
+        #     f"1 filtered> {test.get_position(ts_with_pred, exclude_nlos=True)} \t{test.pred_from_detection}")
+        # print(f"2 original> {test.get_position(test.vanilla_ts)} ")
 
         'with grand model'
         # time.sleep(0.1)

@@ -2,7 +2,7 @@ from pyflowchart import *
 
 
 "smart ts filter"
-st = StartNode('getting data from MQTT')
+st = StartNode('getting \ndata from MQTT')
 op = OperationNode('apply ML model \nfor each anchor')
 cond = ConditionNode('LOS?')
 op2 = OperationNode(

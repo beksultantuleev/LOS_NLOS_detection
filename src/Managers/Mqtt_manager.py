@@ -78,10 +78,10 @@ if __name__ == "__main__":
                 time.sleep(0.1)
                 'raw anchor data'
                 num = 15# if count <100 else 15
-                test.publish('topic/1', f'1"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {np.random.randint(0, num)}.512489]')
+                test.publish('topic/1', f'1"[4, {count}, {65549343+np.random.randint(-100,100)}, -83, {8}]')
                 test.publish('topic/2', f'2"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {np.random.randint(0, num)}.512489]')
                 test.publish('topic/3', f'3"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {np.random.randint(0, num)}.512489]')
-                test.publish('topic/4', f'4"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {5+np.random.randint(-3,10)}.512489]')
+                # test.publish('topic/4', f'4"[4, {count}, {65549343+np.random.randint(-100,100)}, -78.996398, {5+np.random.randint(-3,10)}.512489]')
                 
                 "data for position"
                 # test.publish('positions', f'[[{np.random.randint(1,5)}, {np.random.randint(1,5)}, {np.random.randint(1,5)}]]')
