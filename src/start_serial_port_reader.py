@@ -3,8 +3,8 @@ from Managers.Mqtt_manager import Mqtt_Manager
 
 test = SerialPortReader()
 
-mqtt_conn = Mqtt_Manager('localhost', 'allInOne')
-pattern = 'Data:new '
+mqtt_conn = Mqtt_Manager('192.168.0.119', 'allInOne')
+pattern = 'Data: '
 while True:
     # print(test.get_data("Data: "))
     # print(test.get_data("Distance: "))

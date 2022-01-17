@@ -17,12 +17,12 @@ from Core_functions.hub_of_functions import *
 import joblib
 from Managers.Deque_manager import Deque_manager
 
-single_data = False
+single_data = True
 use_scaler = False
 acquisition_number = 4
 
 mqtt_conn = Mqtt_Manager(
-    "localhost", "allInOne")
+    "192.168.0.119", "allInOne")
 
 
 

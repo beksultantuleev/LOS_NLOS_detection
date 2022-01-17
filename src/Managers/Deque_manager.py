@@ -8,6 +8,7 @@ class Deque_manager():
         self.data_list = []
         self.std = 0
         self.avg = 0
+        self.half_array_avrg = 0
     
     def get_data_list(self):
         return self.data_list
@@ -18,12 +19,16 @@ class Deque_manager():
             self.data_list.pop(0)
         self.std = np.std(self.data_list)
         self.avg = np.average(self.data_list)
+        self.half_array_avrg = np.average(self.data_list[int(len(self.data_list)/2):])
 
     def get_std(self):
         return self.std
     
     def get_avrg(self):
         return self.avg
+
+    def get_half_array_avrg(self):
+        return self.half_array_avrg
     
     def get_last_value(self):
         if len(self.data_list)!=0:

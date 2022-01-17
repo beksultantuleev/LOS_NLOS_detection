@@ -19,9 +19,9 @@ nlos_data["Class"] = 0
 # print(los_data.head())
 # print(nlos_data.head())
 dataframe = pd.concat([nlos_data, los_data], ignore_index=True)
-dataframe = dataframe.drop(["acquisition"], axis=1)
-
-# dataframe.to_csv('full_dataframe_with_rx_difference.csv', index=None)
+dataframe = dataframe.drop(["acquisition", 'F1', 'F2', 'F3', 'CIR'], axis=1)
+dataframe['RX_level'] = dataframe['RX_level'] * (-1)
+print(f">>>>>>>>>>>>>>>>>>>>>>\nmax value is {dataframe['RX_level'].max()} and min is {dataframe['RX_level'].min()}")
 
 
 'scaler'
@@ -93,12 +93,14 @@ def classification(method):
     shap_values = explainer.shap_values(x_test)
 
     "summary plot"
-    fig = shap.summary_plot(shap_values[1], x_test, show=True)
-    # plt.title(f'{target}, data: {name_of_dataset}')
-    # plt.tight_layout()
-    # plt.savefig(
-    #     f"src_Protection_Project/pictures/shap/summary_plot/{target}_{name_of_dataset}_summary_plot.jpg")
-    # plt.close()
+    # plt.figure(figsize=(4,3))
+    fig = shap.summary_plot(shap_values[1], x_test, show=False)
+    
+    plt.title(f'Features')
+    plt.tight_layout()
+    plt.savefig(
+        f"src/Data_analysis/plot_data/summary_plot.jpg")
+    plt.close()
     "<<<<<<<<"
 
 
