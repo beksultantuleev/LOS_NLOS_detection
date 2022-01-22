@@ -24,3 +24,6 @@ class AnomalyDetector(Model):
         encoded = self.encoder(x)
         decoded = self.decoder(encoded)
         return decoded
+# if __name__ == "__main__":
+#     model = AnomalyDetector(2)
+#     print(model.summary())

@@ -12,22 +12,23 @@ from tensorflow.keras.models import Model
 from keras.models import load_model
 import collections
 from Core_functions.hub_of_functions import *
+from keras.utils.vis_utils import plot_model
+
+'not in use'
 
 
-'load regular autoencoder that works like pca'
-
-
-autoencoder = load_model('trained_models/autoencoder')
-
+autoencoder = load_model('trained_models/anomaly_detection_model')
+# plot_model(autoencoder, to_file='model_plot.png', show_shapes=True, show_layer_names=True)
+print(autoencoder.summary())
 # encoder.summary()
 
-data = pd.read_csv('data/los_nlos_cluster_dataa.txt')
-x_train = data.drop(['activity'], axis=1)
-'reshape data'
-x_train = x_train.to_numpy()
-x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], 1))
-# print(x_train.shape)  # (50000, 5, 1)
+# data = pd.read_csv('data/los_nlos_cluster_dataa.txt')
+# x_train = data.drop(['activity'], axis=1)
+# 'reshape data'
+# x_train = x_train.to_numpy()
+# x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], 1))
+# # print(x_train.shape)  # (50000, 5, 1)
 
-encoded_data = autoencoder.encoder(x_train).numpy()
-# print(f'shape of encoded is {encoded_data.shape}')
-print(encoded_data)
+# encoded_data = autoencoder.encoder(x_train).numpy()
+# # print(f'shape of encoded is {encoded_data.shape}')
+# print(encoded_data)

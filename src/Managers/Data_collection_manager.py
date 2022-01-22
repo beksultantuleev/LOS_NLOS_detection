@@ -21,7 +21,7 @@ class Listener():
         #                          "RX_difference", "CIR", "F1", "F2", "F3"]
         self.via_port_reader = via_port_reader
         self.allInOne_conn = Mqtt_Manager(
-            "localhost", "allInOne")
+            "192.168.0.119", "allInOne")
 
         self.data = np.empty(shape=(0, len(self.list_of_features)))
         self.samples = 40
@@ -55,7 +55,7 @@ class Listener():
                 self.data = np.append(self.data, np.expand_dims(
                     np.array(self.allInOne_conn.processed_data), axis=0), axis=0)
         else:
-            pattern = "Data:new "
+            pattern = "Data: "
             if self.serialPortInitiation.get_data(pattern=pattern):
                 serialPort_data = self.serialPortInitiation.get_data(
                     pattern=pattern)
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     start = timeit.default_timer()
 
     test = Listener(via_port_reader=True)
-    test.set_dataset_name("NLOS_2m_test")
+    test.set_dataset_name("NLOS_2m_new")
     test.set_acquisition_number(4)
     test.set_sample_size(5000)
     limiter = 0

@@ -3,32 +3,33 @@ from anytree.exporter import DotExporter
 import matplotlib.pyplot as plt
 from sklearn import tree
 
-Position_est_alg = Node("Postion estimating\n algorithms") #root
-range_based = Node("Range-based\n algorithms", Position_est_alg) #root
-range_free = Node("Range-free\n algorithms", Position_est_alg) #root
-proximity_based = Node("Proximity-based\n algorithms", range_free) #root
-toa_ = Node("ToA", range_based)
-tdoa_ = Node("TDoA", range_based)
-aoa_ = Node("AoA", range_based)
-rssi = Node("RSSI", range_based)
+# Position_est_alg = Node("Postion estimating\n algorithms") #root
+# range_based = Node("Range-based\n algorithms", Position_est_alg) #root
+# range_free = Node("Range-free\n algorithms", Position_est_alg) #root
+# proximity_based = Node("Proximity-based\n algorithms", range_free) #root
+# toa_ = Node("ToA", range_based)
+# tdoa_ = Node("TDoA", range_based)
+# aoa_ = Node("AoA", range_based)
+# rssi = Node("RSSI", range_based)
 
-DotExporter(Position_est_alg).to_picture("src/Data_analysis/plot_data/Position_est_alg.png")
+# DotExporter(Position_est_alg).to_picture("src/Data_analysis/plot_data/Position_est_alg.png")
 
 
-# Indoor_Positioning = Node("Indoor Positioning\n algorithms") #root
-# fingerprinting = Node("Fingerprinting", Indoor_Positioning)
-# proximity = Node("Proximity", Indoor_Positioning)
-# trilat = Node("Trilateration", Indoor_Positioning)
-# triang = Node("Triangulation", Indoor_Positioning)
-# toa = Node("ToA", trilat)
-# tdoa = Node("TDoA", trilat)
-# aoa = Node("AoA", triang)
-# rss = Node("RSSI", fingerprinting)
-# rss = Node("RSSI", proximity)
+Indoor_Positioning = Node("Indoor Positioning\n algorithms") #root
+fingerprinting = Node("Fingerprinting", Indoor_Positioning)
+proximity = Node("Proximity", Indoor_Positioning)
+trilat = Node("Trilateration", Indoor_Positioning)
+triang = Node("Triangulation", Indoor_Positioning)
+toa = Node("ToA", trilat)
+tdoa = Node("TDoA", trilat)
+aoa = Node("AoA", triang)
+rss = Node("RSSI", fingerprinting)
+rss = Node("RSSI", proximity)
+rss = Node("RSSI", trilat)
 
-# for pre, fill, node in RenderTree(Indoor_Positioning):
-#     print("%s%s" % (pre, node.name))
-# DotExporter(Indoor_Positioning).to_picture("src/Data_analysis/plot_data/Indoor_Positioning.png")
+for pre, fill, node in RenderTree(Indoor_Positioning):
+    print("%s%s" % (pre, node.name))
+DotExporter(Indoor_Positioning).to_picture("src/Data_analysis/plot_data/Indoor_Positioning.png")
 
 
 # IPS = Node("Indoor Positioning\nSystems") #root

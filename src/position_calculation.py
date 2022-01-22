@@ -12,6 +12,7 @@ from keras.models import load_model
 from Managers.MultiOutputClastering import MultiOutputClustering
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.multioutput import MultiOutputClassifier
+from scipy.spatial.distance import cdist
 
 
 class Position_finder:
@@ -61,15 +62,21 @@ class Position_finder:
         msg = f'{message.payload.decode("utf")}'
         pattern = re.compile(r'\[.+')
         matches = pattern.finditer(msg)
+        actv_anch = []
         for match in matches:
             res = json.loads(match.group(0))
-
             for i in range(1, self.amount_of_anchors+1):
                 top_name = f'topic/{i}'
                 if message.topic == top_name:
                     'you can put "i" in "res" to have anchor identification'
                     self.raw_anchors_data[i-1] = [i] + res  # [i]+
-        # print(self.raw_anchors_data)
+
+        # 'below is check to remove 0 from raw anchor data'
+        # if self.data_collection_complete:
+        #     for d in self.raw_anchors_data:
+        #         if type(d)!= list:
+        #             self.raw_anchors_data.remove(d)
+        # print(f'this is raw anch data \n{self.raw_anchors_data}')
 
     def pca_k_means_model(self):
         if self.pca_wait_flag:
@@ -90,7 +97,7 @@ class Position_finder:
 
     def anomaly_detection(self):
         "true or 1 is LOS"
-        raw_anchors_data = np.delete(np.array(self.raw_anchors_data), 2, 1) #this deletes msg num column
+        raw_anchors_data = np.delete(np.array(self.raw_anchors_data), 2, 1)
 
         self.vanilla_ts = raw_anchors_data[:, :-2]
         raw_data = np.array(raw_anchors_data)[:, -2:]
@@ -105,7 +112,6 @@ class Position_finder:
             self.data_detection = np.append(self.data_detection, np.expand_dims(
                 self.pred_from_detection, axis=0), axis=0)
         # print(f'1 from detection {pred}')
-
 
     def simple_timestamp_filter(self, los=1):
         'update done'
@@ -123,7 +129,7 @@ class Position_finder:
                 self.modified_ts[counter] = [
                     t[0], t[1], self.deque_list[counter].get_avrg(), t[3]]
             counter += 1
-        return self.modified_ts
+        return np.array(self.modified_ts)
 
     def smart_timestamp_filter(self, los=1):
         counter = 0
@@ -190,7 +196,7 @@ class Position_finder:
         # print(ts_with_los_prediction)
         los = 1
         los_anchors = np.empty(shape=(0, 4))
-        
+
         nlos_anchors = np.empty(shape=(0, 4))
         A_n = self.anchor_postion_list
 
@@ -211,7 +217,8 @@ class Position_finder:
             # print(f'nlos {nlos_anchors}')
 
             if len(los_anchors) >= number_of_anchors_for_pos_estimation:
-                los_anchor_indices = los_anchors[:, 0].astype(int) -1 #subsract 1 cuz A_n starts with 0
+                los_anchor_indices = los_anchors[:, 0].astype(
+                    int) - 1  # subsract 1 cuz A_n starts with 0
                 # print(los_anchor_indices)
                 A_n = A_n[los_anchor_indices, :, :]
                 # print(A_n)
@@ -224,14 +231,14 @@ class Position_finder:
                         los_anchors = np.append(los_anchors, np.expand_dims(
                             nlos_anchors[count], axis=0), axis=0)
                         count += 1
-                    los_anchor_indices = los_anchors[:, 0].astype(int) -1
+                    los_anchor_indices = los_anchors[:, 0].astype(int) - 1
         #             # print(los_anchor_indices)
                     A_n = A_n[los_anchor_indices, :, :]
                     ts_with_los_prediction = los_anchors[:, 1:]
                 else:
                     # num_of
                     nlos_anchor_indices = nlos_anchors[:, 0].astype(
-                        int)[:number_of_anchors_for_pos_estimation] -1
+                        int)[:number_of_anchors_for_pos_estimation] - 1
                     A_n = A_n[nlos_anchor_indices, :, :]
                     # print(A_n)
                     ts_with_los_prediction = nlos_anchors[:
@@ -304,6 +311,121 @@ class Position_finder:
             f'1 filtered {np.array(self.raw_anchors_data)} \t  {self.pred_from_detection}')
         print(f'2 original {original}')
 
+    def get_position_vanilla(self, ts_with_los_prediction):
+
+        los = 1
+        los_anchors = np.empty(shape=(0, 4))
+
+        nlos_anchors = np.empty(shape=(0, 4))
+        A_n = self.anchor_postion_list
+
+        # print(ts_with_los_prediction[:,0])
+
+        'try to get working anchors'
+        anchor_indices = ts_with_los_prediction[:, 0].astype(int) - 1
+
+        # 'logic of excluding bad anchors here'
+        'i want to return only [tagid, ts, lospred]'
+        ts_with_los_prediction = ts_with_los_prediction[:, 1:]
+        A_n = A_n[anchor_indices, :, :]
+
+        n = len(A_n)
+        c = 299792458
+
+        toa = [0] * len(ts_with_los_prediction)
+        counter = 0
+        for time_stamp_with_los in ts_with_los_prediction:
+            t = np.float32(time_stamp_with_los[1]) * np.float32(15.65e-12)
+            toa[counter] = t
+            counter += 1
+
+        toa = np.array([toa])
+        tdoa = toa - toa[0][0]  # changed here
+        # print(tdoa)
+        tdoa = tdoa[0][1:]
+        # print(tdoa)
+        D = tdoa*c  # D is 2x1
+        # print(D)
+
+        D = D.reshape(len(ts_with_los_prediction)-1, 1)
+        A_diff_one = np.array((A_n[0][0][0]-A_n[1:, 0]), dtype='float32')
+        A_diff_two = np.array((A_n[0][1][0]-A_n[1:, 1]), dtype='float32')
+        A_diff_three = np.array((A_n[0][2][0]-A_n[1:, 2]), dtype='float32')
+
+        A = 2 * np.array([A_diff_one, A_diff_two, A_diff_three, D]).T
+
+        b = D**2 + np.linalg.norm(A_n[0])**2 - np.sum(A_n[1:, :]**2, 1)
+        x_t0 = np.dot(np.linalg.pinv(A), b)
+
+        x_t_0 = np.array([x_t0[0][0], x_t0[0][1], x_t0[0][2]])
+
+        # loop
+        f = np.zeros((n-1, 1))
+        del_f = np.zeros((n-1, 3))
+        A_n = A_n.T
+        for ii in range(1, n):
+
+            f[ii-1] = np.linalg.norm(x_t_0-A_n[0, :, ii].reshape(3, 1)) - \
+                np.linalg.norm(x_t_0-A_n[0, :, 0].reshape(3, 1))
+
+            del_f[ii-1, 0] = np.dot((x_t_0[0]-A_n[0, 0, ii]), np.reciprocal(np.linalg.norm(x_t_0-A_n[0, :, ii].reshape(
+                3, 1)))) - np.dot((x_t_0[0]-A_n[0, 0, 0]), np.reciprocal(np.linalg.norm(x_t_0-A_n[0, :, 0].reshape(3, 1))))
+            del_f[ii-1, 1] = np.dot((x_t_0[1]-A_n[0, 1, ii]), np.reciprocal(np.linalg.norm(x_t_0-A_n[0, :, ii].reshape(
+                3, 1)))) - np.dot((x_t_0[1]-A_n[0, 1, 0]), np.reciprocal(np.linalg.norm(x_t_0-A_n[0, :, 0].reshape(3, 1))))
+            del_f[ii-1, 2] = np.dot((x_t_0[2]-A_n[0, 2, ii]), np.reciprocal(np.linalg.norm(x_t_0-A_n[0, :, ii].reshape(
+                3, 1)))) - np.dot((x_t_0[2]-A_n[0, 2, 0]), np.reciprocal(np.linalg.norm(x_t_0-A_n[0, :, 0].reshape(3, 1))))
+        x_t = np.dot(np.linalg.pinv(del_f), (D-f)) + x_t_0
+        tag_id = ts_with_los_prediction[0][0]
+
+        self.position = [[x_t[0][0], x_t[1][0], x_t[2][0]], tag_id]
+        return self.position
+
+    def project_athena(self, ts_with_los_prediction):
+        # print(ts_with_los_prediction)
+        los = 1
+        los_anchors = np.empty(shape=(0, 4))
+        nlos_anchors = np.empty(shape=(0, 4))
+
+        # print(ts_with_los_prediction)
+        for value in ts_with_los_prediction:
+            if value[-1] == los:
+                # print(value)
+                los_anchors = np.append(los_anchors, np.expand_dims(
+                    value, axis=0), axis=0)
+            else:
+                nlos_anchors = np.append(nlos_anchors, np.expand_dims(
+                    value, axis=0), axis=0)
+        # print(f'los {los_anchors}')
+        # print(f'nlos {nlos_anchors}')
+
+        coordinates = []
+        
+        if len(los_anchors) >= 3:
+            candidates_for_pos_est = np.array(los_anchors)
+            coordinates.append(self.get_position_vanilla(
+                        los_anchors)[0])
+            if len(nlos_anchors) != 0:
+                for nlos_a in nlos_anchors:
+                    candidates_for_pos_est = np.append(candidates_for_pos_est, np.expand_dims(
+                        nlos_a, axis=0), axis=0)
+                    coordinates.append(self.get_position_vanilla(
+                        candidates_for_pos_est)[0])
+                    # print(candidates_for_pos_est)
+                    # print(len(candidates_for_pos_est))
+        if coordinates:
+            euclid_dist_between_points = cdist(
+                coordinates, coordinates, "euclidean")
+
+            # print(euclid_dist_between_points[0, :])
+            distance_deviation_and_anchor = list(zip(np.delete(euclid_dist_between_points[0, :], 0), nlos_anchors[:, 0]))
+        # print(distance_deviation_and_anchor)
+        anchors_that_we_keep = []
+        for deviation in distance_deviation_and_anchor:
+            if deviation[0]<5:
+                anchors_that_we_keep.append(deviation[1])
+        print(f"keep {anchors_that_we_keep}, {distance_deviation_and_anchor}")
+
+
 
 if __name__ == "__main__":
 
@@ -311,7 +433,9 @@ if __name__ == "__main__":
     A_n2 = np.array([[0], [0], [0.5]])
     A_n3 = np.array([[5], [0], [1.8]])  # master
     A_n4 = np.array([[3], [5], [1]])  # master
-    anchors_pos = np.array([A_n1, A_n2, A_n3, A_n4])
+    A_n5 = np.array([[2], [5], [4]])  # master
+    anchors_pos = np.array([A_n1, A_n2, A_n3, A_n4, A_n5])
+    # anchors_pos = np.array([A_n1, A_n2, A_n3])
     # print(A_n1.shape)
     test = Position_finder(anchor_postion_list=anchors_pos)
     while True:
@@ -319,10 +443,11 @@ if __name__ == "__main__":
         time.sleep(0.5)
         test.anomaly_detection()
         ts_with_pred = test.simple_timestamp_filter()
+        test.project_athena(ts_with_pred)
         # print(ts_with_pred)
-        pos = test.get_position(ts_with_pred, exclude_nlos=True)
-        print(pos)
-
+        # pos = test.get_position_improved(ts_with_pred)
+        # pos = test.get_position(ts_with_pred, exclude_nlos=True)
+        # print(pos)
 
         'with grand model'
         # time.sleep(0.1)

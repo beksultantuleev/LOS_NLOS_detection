@@ -8,9 +8,10 @@ from collections import Counter
 from sklearn.preprocessing import StandardScaler
 import joblib
 
+'use pca with scaler. its better'
 num_of_classes = 2
-save_models = True
-use_scaler = False
+save_models = False
+use_scaler = True
 single_data = True
 num_of_acquisition = 4
 
@@ -65,6 +66,7 @@ else:
 # print(df)
 
 
+
 'k means'
 kmeans = KMeans(n_clusters=num_of_classes, random_state=42)
 kmeans.fit(df)
@@ -91,4 +93,13 @@ for i in range(num_of_classes):
     # Plotting the results
     plt.scatter(filtered_label[:, 0], filtered_label[:, 1])
 
+# plt.scatter(df[:, 0], df[:, 1])
+
+# import plotly.express as px
+# fig = px.scatter(df, x=0, y=1)
+# fig.show()
+plt.xlabel("Principal Component 1")
+plt.ylabel("Principal Component 2")
+plt.title("PCA with k-means")
+plt.tight_layout()
 plt.show()

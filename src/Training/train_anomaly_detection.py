@@ -1,3 +1,4 @@
+from pickle import TRUE
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -167,6 +168,9 @@ class Train_anomaly_detection_model():
             plt.fill_between(
                 np.arange(self.number_of_features), decoded_data[0], self.normal_test_data[0], color='lightcoral')
             plt.legend(labels=["Input", "Reconstruction", "Error"])
+            plt.xlabel("Features")
+            plt.ylabel("Data points")
+            plt.title("Reconstruction of Normal Data")
             plt.show()
         # plt.close()
 
@@ -178,6 +182,9 @@ class Train_anomaly_detection_model():
             plt.fill_between(
                 np.arange(self.number_of_features), decoded_data[0], self.anomalous_test_data[0], color='lightcoral')
             plt.legend(labels=["Input", "Reconstruction", "Error"])
+            plt.xlabel("Features")
+            plt.ylabel("Data points")
+            plt.title("Reconstruction of Anomalous Data")
             plt.show()
             # plt.close()
 
@@ -239,9 +246,9 @@ Recall: {recall_score(labels, predictions)}
 if "__main__" == __name__:
     test = Train_anomaly_detection_model()
     list_of_features = ["RX_level", 'RX_difference']
-    test.set_configuration(single_data_input=False, save_model=True,
+    test.set_configuration(single_data_input=True, save_model=False,
                            turn_on_all_plots=True, list_of_features=list_of_features, 
                            acquisition_number=4)
-    test.select_dataset('data/LOS_good_data_complete.csv',
-                        'data/NLOS_data_water_2_ss95000_1.csv', sklearn_scale=False)
-    test.start_training(epochs=50)
+    test.select_dataset('data/los_improved_data.csv',
+                        'data/nlos_improved_data.csv', sklearn_scale=False)
+    test.start_training(epochs=25)
