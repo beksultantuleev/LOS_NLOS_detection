@@ -14,8 +14,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.multioutput import MultiOutputClassifier
 from scipy.spatial.distance import cdist
 
-
-class Position_finder:
+"main class with models and mitigation filters"
+class NLOS_detection_and_Mitigation:
     def __init__(self, anchor_postion_list=[]):
         broker_address = "192.168.0.119"
         self.client = mqtt.Client('P1')  # create new instance
@@ -312,7 +312,7 @@ class Position_finder:
         print(f'2 original {original}')
 
     def get_position_vanilla(self, ts_with_los_prediction):
-
+        'updated pos calc with anchor id'
         los = 1
         los_anchors = np.empty(shape=(0, 4))
 
@@ -381,6 +381,7 @@ class Position_finder:
         return self.position
 
     def project_athena(self, ts_with_los_prediction):
+        'in development'
         # print(ts_with_los_prediction)
         los = 1
         los_anchors = np.empty(shape=(0, 4))
@@ -437,7 +438,7 @@ if __name__ == "__main__":
     anchors_pos = np.array([A_n1, A_n2, A_n3, A_n4, A_n5])
     # anchors_pos = np.array([A_n1, A_n2, A_n3])
     # print(A_n1.shape)
-    test = Position_finder(anchor_postion_list=anchors_pos)
+    test = NLOS_detection_and_Mitigation(anchor_postion_list=anchors_pos)
     while True:
         'adding anchor number from start'
         time.sleep(0.5)

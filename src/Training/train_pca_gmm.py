@@ -10,7 +10,8 @@ import joblib
 import sklearn.metrics as metrics
 from sklearn.mixture import GaussianMixture
 
-'use pca with scaler. its better'
+'PCA with GMM'
+
 num_of_classes = 2
 save_models = True
 # use_scaler = True

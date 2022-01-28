@@ -20,20 +20,24 @@ class Train_anomaly_detection_model():
         self.save_model = False
         self.turn_on_all_plots = True
         self.number_of_features = len(self.list_of_features)
+        self.rewrite_logs = True
 
-    def set_configuration(self, single_data_input=True, save_model=False, turn_on_all_plots=True, list_of_features=["RX_level", 'RX_difference'], acquisition_number = 2):
+    def set_configuration(self, rewrite_logs = True, single_data_input=True, save_model=False, turn_on_all_plots=True, list_of_features=["RX_level", 'RX_difference'], acquisition_number=2):
         self.single_data_input = single_data_input
         self.save_model = save_model
         self.turn_on_all_plots = turn_on_all_plots
         self.list_of_features = list_of_features
         self.acquisition_number = acquisition_number
+        self.rewrite_logs = rewrite_logs
         if not self.single_data_input:
-            self.number_of_features = len(self.list_of_features)*self.acquisition_number
+            self.number_of_features = len(
+                self.list_of_features)*self.acquisition_number
         else:
             self.number_of_features = len(self.list_of_features)
 
-    def multiInputConfiguration(self, dataset, list_of_independent_vars, acquisition="acquisition", set_num_of_acquisition = 2):
-        dataset[acquisition] = self.acquisition_modifier(acquisition_number=set_num_of_acquisition, length_of_acquisitions=len(dataset))
+    def multiInputConfiguration(self, dataset, list_of_independent_vars, acquisition="acquisition", set_num_of_acquisition=2):
+        dataset[acquisition] = self.acquisition_modifier(
+            acquisition_number=set_num_of_acquisition, length_of_acquisitions=len(dataset))
         for acq_index in range(1, max(np.unique(dataset[acquisition]))+1):
             temp = dataset[dataset[acquisition] == acq_index]
         dataset['idx'] = dataset.groupby(acquisition).cumcount()
@@ -232,23 +236,24 @@ Recall: {recall_score(labels, predictions)}
                 log_name = "Single_data_input"
             else:
                 log_name = 'Multi_data_input'
-            file = open(
-                f"src/Training/logs/anomaly_detection/logs_{log_name}.txt", "w")
-            file.write(log)
-            file.close()
-            print(log)
+            if self.rewrite_logs:
+                file = open(
+                    f"src/Training/logs/anomaly_detection/logs_{log_name}.txt", "w")
+                file.write(log)
+                file.close()
+            
+            print(f'rewrite losg>>{self.rewrite_logs} \n{log}')
 
         preds = predict(autoencoder, self.x_test, threshold)
         log_stats(preds, self.y_test)
-
 
 
 if "__main__" == __name__:
     test = Train_anomaly_detection_model()
     list_of_features = ["RX_level", 'RX_difference']
     test.set_configuration(single_data_input=True, save_model=False,
-                           turn_on_all_plots=True, list_of_features=list_of_features, 
-                           acquisition_number=4)
+                           turn_on_all_plots=True, list_of_features=list_of_features,
+                           acquisition_number=4, rewrite_logs=False)
     test.select_dataset('data/los_improved_data.csv',
                         'data/nlos_improved_data.csv', sklearn_scale=False)
     test.start_training(epochs=25)

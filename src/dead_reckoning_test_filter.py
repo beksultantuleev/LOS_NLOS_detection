@@ -7,7 +7,7 @@ import math
 from Controllers_and_KF.LQR_controller import LQRcontroller
 from Controllers_and_KF.KalmanFilter import KalmanFilterUWB
 
-'the name of this mitigation is dead reckoning'
+'dead reckoning, in beta mode'
 
 mqtt_conn = Mqtt_Manager('localhost', "Position")
 mqtt_los = Mqtt_Manager('localhost', "LOS")

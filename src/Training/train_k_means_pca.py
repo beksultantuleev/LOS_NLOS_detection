@@ -9,7 +9,8 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 import sklearn.metrics as metrics
 
-'use pca with scaler. its better'
+'PCA with k means'
+
 num_of_classes = 2
 save_models = False
 use_scaler = True

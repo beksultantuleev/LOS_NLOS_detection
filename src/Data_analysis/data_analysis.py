@@ -10,16 +10,16 @@ from sklearn.preprocessing import StandardScaler
 
 'data analysis for selecting right variables'
 
-los_data = pd.read_csv('data/LOS_2m_test_4_ss5000_1.csv')
+los_data = pd.read_csv('data/LOS_good_data_complete.csv')
 los_data["Class"] = 1
 
-nlos_data = pd.read_csv('data/NLOS_2m_test_4_ss5000_1.csv')
-# nlos_data = pd.read_csv('data/NLOS_1m_test_4_ss5000_2.csv')
+nlos_data = pd.read_csv('data/NLOS_2m_generated_4_ss95000_1.csv')
+
 nlos_data["Class"] = 0
 # print(los_data.head())
 # print(nlos_data.head())
 dataframe = pd.concat([nlos_data, los_data], ignore_index=True)
-dataframe = dataframe.drop(["acquisition", 'F1', 'F2', 'F3', 'CIR'], axis=1)
+dataframe = dataframe.drop(["acquisition"], axis=1)
 dataframe['RX_level'] = dataframe['RX_level'] * (-1)
 print(f">>>>>>>>>>>>>>>>>>>>>>\nmax value is {dataframe['RX_level'].max()} and min is {dataframe['RX_level'].min()}")
 
@@ -82,29 +82,19 @@ lgbm = LGBMClassifier(**parameters_lgbm)
 
 
 def classification(method):
-    # self.method = method
     method.fit(x_train, y_train)
-    y_pred_class = method.predict(x_test)
-    y_predict = method.predict_proba(x_test)
-
-
     "setting shap values"
     explainer = shap.TreeExplainer(method)
     shap_values = explainer.shap_values(x_test)
-
     "summary plot"
-    # plt.figure(figsize=(4,3))
     fig = shap.summary_plot(shap_values[1], x_test, show=False)
-    
     plt.title(f'Features')
     plt.tight_layout()
+    # plt.show()
     plt.savefig(
         f"src/Data_analysis/plot_data/summary_plot.jpg")
     plt.close()
     "<<<<<<<<"
 
-
-# dataframe = dataframe.drop(["CIR", 'FPPL'], axis= 1)
 # print(dataframe.loc[dataframe["Class"]==1].corr())
-
 classification(lgbm)
