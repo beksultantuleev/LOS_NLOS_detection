@@ -8,13 +8,14 @@ from collections import Counter
 from sklearn.preprocessing import StandardScaler
 import joblib
 import sklearn.metrics as metrics
+from sklearn.mixture import GaussianMixture
 
 'use pca with scaler. its better'
 num_of_classes = 2
-save_models = False
-use_scaler = True
-single_data = True
-num_of_acquisition = 4
+save_models = True
+# use_scaler = True
+# single_data = True
+# num_of_acquisition = 4
 
 "kmeans + pca train models"
 
@@ -22,7 +23,8 @@ data_los = pd.read_csv('data/LOS_good_data_complete.csv')
 data_nlos = pd.read_csv('data/NLOS_good_data_complete.csv')
 data_nlos2 = pd.read_csv('data/NLOS_data_water_2_ss95000_1.csv')
 data_mix = pd.read_csv('data/additional_mix_data.csv')
-data = pd.concat([data_los, data_nlos, data_nlos2, data_mix], ignore_index=True)
+data = pd.concat([data_los, data_nlos, data_nlos2,
+                 data_mix], ignore_index=True)
 
 
 def multiInputConfiguration(dataset, list_of_independent_vars, acquisition="acquisition"):
@@ -34,6 +36,8 @@ def multiInputConfiguration(dataset, list_of_independent_vars, acquisition="acqu
         list_of_independent_vars]
     # print(final_dataframe)
     return final_dataframe
+
+
 def acquisition_modifier(acquisition_number, length_of_acquisitions):
     if acquisition_number == 1:
         return [1]*length_of_acquisitions
@@ -46,49 +50,42 @@ def acquisition_modifier(acquisition_number, length_of_acquisitions):
     return lis
 
 
-if single_data:
-    data = data.drop(["acquisition", ], axis=1)  # 'maxNoise'
-else:
-    data['acquisition'] = acquisition_modifier(num_of_acquisition, len(data))
-    data = multiInputConfiguration(data, list_of_independent_vars=['RX_level','RX_difference'])
+data = data.drop(["acquisition", ], axis=1)  # 'maxNoise'
+# print(data)
 
 # print(f"data is here! {data}")
-if use_scaler:
-    scaler = StandardScaler()
-    scaler.fit(data)
-    scaled_data = scaler.transform(data)
+
+scaler = StandardScaler()
+scaler.fit(data)
+scaled_data = scaler.transform(data)
 pca = PCA(n_components=2)
 # print(f'scaled data is here! {scaled_data}')
 # Transform the data
-if use_scaler:
-    df = pca.fit_transform(scaled_data)
-else:
-    df = pca.fit_transform(data)
+
+df = pca.fit_transform(scaled_data)
+
 # print(df)
 
-
-
 'k means'
-kmeans = KMeans(n_clusters=num_of_classes, random_state=42)
-kmeans.fit(df)
-label = kmeans.predict(df)
-"test silhouette score"
-# labels = kmeans.labels_
-# print(f"silhouette score is {metrics.silhouette_score(df, labels, metric='euclidean')}")
+# kmeans = KMeans(n_clusters=num_of_classes, random_state=42)
+# kmeans.fit(df)
+# label = kmeans.predict(df)
+
+'gmm'
+gm = GaussianMixture(n_components=2, random_state=42,
+                     covariance_type='tied', verbose=1, init_params='kmeans').fit(df)
+label_proba = gm.predict_proba(df)
+label = gm.predict(df)
+# print(np.min(label))
+# print(label)
+
 
 "save model"
 if save_models:
-    if single_data:
-        if use_scaler:
-            joblib.dump(scaler, 'trained_models/standard_scaler_pca_kmeans.save')
-        joblib.dump(pca, 'trained_models/pca.sav')
-        joblib.dump(kmeans, 'trained_models/k_means.sav')
-    else:
-        if use_scaler:
-            joblib.dump(scaler, f'trained_models/standard_scaler_pca_kmeans_by_acquisition_{num_of_acquisition}.save')
-        joblib.dump(pca, f'trained_models/pca_by_acquisition_{num_of_acquisition}.sav')
-        joblib.dump(kmeans, f'trained_models/k_means_by_acquisition_{num_of_acquisition}.sav')
-
+    'pca and scaler is the same as for kmeans'
+    # joblib.dump(scaler, 'trained_models/standard_scaler_pca_gmm.save')
+    # joblib.dump(pca, 'trained_models/pca_for_gmm.sav')
+    joblib.dump(gm, 'trained_models/gmm.sav')
 
 "plotting"
 # filter rows of original data
@@ -97,13 +94,8 @@ for i in range(num_of_classes):
     # Plotting the results
     plt.scatter(filtered_label[:, 0], filtered_label[:, 1])
 
-# plt.scatter(df[:, 0], df[:, 1])
-
-# import plotly.express as px
-# fig = px.scatter(df, x=0, y=1)
-# fig.show()
 plt.xlabel("Principal Component 1")
 plt.ylabel("Principal Component 2")
-plt.title("PCA with k-means")
+plt.title("PCA with gmm")
 plt.tight_layout()
 plt.show()

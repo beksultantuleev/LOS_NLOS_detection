@@ -67,19 +67,32 @@ df_anomaly = (x_train.values -
 # pred = predict_anomaly_detection(autoencoder, [df_anomaly], threshold)
 'kmeans pca'
 pca_model = joblib.load('trained_models/pca.sav')
-k_means_model = joblib.load('trained_models/k_means.sav')
 scaler = joblib.load('trained_models/standard_scaler_pca_kmeans.save')
+k_means_model = joblib.load('trained_models/k_means.sav')
+
+'gmm'
+gmm_model = joblib.load('trained_models/gmm.sav')
 
 # df = pca_model.transform(x_train)
 "pca use scaler! its better"
-# df = pca_model.transform([[-79, 8]])
-# scaled_data = scaler.transform([[-85, 7]])
+'to test'
+# scaled_data = scaler.transform([[-79, 3]])
+# df = pca_model.transform(scaled_data)
+# pred = gmm_model.predict(df)
+# pred_proba = gmm_model.predict_proba(df)
+# print(pred)
+# print(pred_proba)
+'end testing'
 scaled_data = scaler.transform(x_train)
 df = pca_model.transform(scaled_data)
-pred = [0]*2
 
+
+pred = [0]*3
 pred[0] = k_means_model.predict(df)
 pred[1] = predict_anomaly_detection(autoencoder, df_anomaly, threshold)
+pred[2] = gmm_model.predict(df)
+# pred[2] = gmm_model.predict_proba(df)[:, 1]
+
 
 for i in range(len(pred)):
     print(f"{'pca with k-means' if i == 0 else 'Anomaly Detection'}")
@@ -87,41 +100,54 @@ for i in range(len(pred)):
         y_train, pred[i])
     cm = metrics.confusion_matrix(
         y_train, pred[i])
+    precision = metrics.precision_score(y_train, pred[i])
+    recall_score = metrics.recall_score(y_train, pred[i])
     print(cm)
-    print(accuracy)
+    print(f'accuracy {accuracy} \nprecision {precision} \nrecall {recall_score}')
+    
 
-# # plt.style.use('default')
-# # sns.heatmap(cm, annot=True, fmt='', cmap='Blues')
+# 'conf mat'
+# accuracy = metrics.accuracy_score(
+#     y_train, pred[2])
+# cm = metrics.confusion_matrix(
+#     y_train, pred[2])
+# print(cm)
+# print(accuracy)
+
+
+# plt.style.use('default')
+# sns.heatmap(cm, annot=True, fmt='', cmap='Blues')
 # # plt.title(f"{'PCA with K-means' if pca else 'Anomaly Detection'}")
-# # # plt.savefig(
-# # #     f"src_Protection_Project/pictures/confusion_matrix/binary/cm_{i[1]}_{name_of_dataset}.jpg")
-# # plt.show()
+# plt.title(f"{'PCA with GMM'}")
+# # plt.savefig(
+# #     f"src_Protection_Project/pictures/confusion_matrix/binary/cm_{i[1]}_{name_of_dataset}.jpg")
+# plt.show()
+'roc'
+# for i in range(len(pred)):
+# plt.style.use('fivethirtyeight')
+# fpr, tpr, thresh = metrics.roc_curve(y_train, pred[2])
+# auc = metrics.roc_auc_score(y_train, pred[2])
+# precision, recall, thresholds = metrics.precision_recall_curve(
+#     y_train, pred[2])
 
-for i in range(len(pred)):
-    plt.style.use('fivethirtyeight')
-    fpr, tpr, thresh = metrics.roc_curve(y_train, pred[i])
-    auc = metrics.roc_auc_score(y_train, pred[i])
-    precision, recall, thresholds = metrics.precision_recall_curve(
-        y_train, pred[i])
-
-    plt.plot(
-        fpr, tpr, label=f"{'PCA with k-means' if i == 0 else 'Anomaly Detection'}, auc= {auc:.4f}")
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.title(f"ROC graph")
-    plt.plot([0, 1], [0, 1], linestyle="--",
-             c="black", linewidth=2)
-
-
-# plot_name = "PRC"
+# 'prc'
 # AP = metrics.average_precision_score(
-#     y_train, pred)
+#     y_train, pred[2])
 # plt.plot(recall, precision, linestyle="-",
-#          label=f"pca (AP = {AP:.4f})")
+#          label=f"PCA with GMM (Avrg Precision = {AP:.4f})")
 # plt.xlabel("Recall")
 # plt.ylabel("Precision")
 # plt.title(f"Precision-Recall graph")
+# 'roc'
+# plt.plot(
+#     fpr, tpr, label=f"PCA with GMM, auc= {auc:.4f}")
+# plt.xlabel("False Positive Rate")
+# plt.ylabel("True Positive Rate")
+# plt.title(f"ROC graph")
+# plt.plot([0, 1], [0, 1], linestyle="--",
+#             c="black", linewidth=2)
 
-plt.legend(loc="best")
-plt.tight_layout()
-plt.show()
+# plt.legend(loc="best")
+# plt.tight_layout()
+# plt.show()
+
