@@ -191,7 +191,9 @@ class NLOS_detection_and_Mitigation:
         self.pred_from_grand_model = self.grand_model.predict([input_data])
         # print(f'grand model {self.pred_from_grand_model} input_data {input_data}')
 
-    def get_position(self, ts_with_los_prediction, exclude_nlos=False):
+    def simple_anchor_selection_filter(self, ts_with_los_prediction, exclude_nlos=False):
+        'this anchor id logic is embedded'
+        'split position estimation logic from anchor selection'
         # ts_with_los_prediction = np.array(ts_with_los_prediction)
         # print(ts_with_los_prediction)
         los = 1
@@ -243,8 +245,14 @@ class NLOS_detection_and_Mitigation:
                     # print(A_n)
                     ts_with_los_prediction = nlos_anchors[:
                                                           number_of_anchors_for_pos_estimation, 1:]
-        'i want to return only [tagid, ts, lospred]'
-        # print(f'{ts_with_los_prediction} detection {self.pred_from_detection}')
+        else:
+            'i want to return only [tagid, ts, lospred]'
+            'try to get working anchors'
+            anchor_indices = ts_with_los_prediction[:, 0].astype(int) - 1
+            'i want to return only [tagid, ts, lospred]'
+            ts_with_los_prediction = ts_with_los_prediction[:, 1:]
+            A_n = A_n[anchor_indices, :, :]
+
 
         n = len(A_n)
         c = 299792458
@@ -301,8 +309,8 @@ class NLOS_detection_and_Mitigation:
         'first is filtered and second is original'
         # ts_with_pred = self.smart_timestamp_filter()
         ts_with_pred = self.simple_timestamp_filter()
-        filtered = self.get_position(ts_with_pred)[0]
-        original = self.get_position(self.vanilla_ts)[0]
+        filtered = self.simple_anchor_selection_filter(ts_with_pred)[0]
+        original = self.simple_anchor_selection_filter(self.vanilla_ts)[0]
         payload_ = f'[{filtered}, {original}]'
         self.client.publish('positions', payload_)
         # print(
@@ -312,7 +320,9 @@ class NLOS_detection_and_Mitigation:
         print(f'2 original {original}')
 
     def get_position_vanilla(self, ts_with_los_prediction):
-        'updated pos calc with anchor id'
+        'make this as only position estimation logic'
+        "that takes [tagid, ts, lospred] values only"
+
         los = 1
         los_anchors = np.empty(shape=(0, 4))
 
@@ -382,6 +392,8 @@ class NLOS_detection_and_Mitigation:
 
     def project_athena(self, ts_with_los_prediction):
         'in development'
+        'it will become smart anchor selection filter'
+        'embedd convex hull logic as well'
         # print(ts_with_los_prediction)
         los = 1
         los_anchors = np.empty(shape=(0, 4))
@@ -444,11 +456,11 @@ if __name__ == "__main__":
         time.sleep(0.5)
         test.anomaly_detection()
         ts_with_pred = test.simple_timestamp_filter()
-        test.project_athena(ts_with_pred)
+        # test.project_athena(ts_with_pred)
         # print(ts_with_pred)
-        # pos = test.get_position_improved(ts_with_pred)
+        pos = test.simple_anchor_selection_filter(ts_with_pred, exclude_nlos=False)
         # pos = test.get_position(ts_with_pred, exclude_nlos=True)
-        # print(pos)
+        print(pos)
 
         'with grand model'
         # time.sleep(0.1)

@@ -84,8 +84,6 @@ label = gm.predict(df)
 "save model"
 if save_models:
     'pca and scaler is the same as for kmeans'
-    # joblib.dump(scaler, 'trained_models/standard_scaler_pca_gmm.save')
-    # joblib.dump(pca, 'trained_models/pca_for_gmm.sav')
     joblib.dump(gm, 'trained_models/gmm.sav')
 
 "plotting"

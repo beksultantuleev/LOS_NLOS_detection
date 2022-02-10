@@ -1,5 +1,6 @@
 import pandas as pd
 from scipy.sparse import data
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import RFE
 from lightgbm import LGBMClassifier
@@ -11,36 +12,33 @@ from sklearn.preprocessing import StandardScaler
 'data analysis for selecting right variables'
 
 los_data = pd.read_csv('data/LOS_good_data_complete.csv')
+los_data = los_data[los_data['RX_difference'] >0]
 los_data["Class"] = 1
 
+# print(los_data[los_data['RX_difference'] <0])
+
+
 nlos_data = pd.read_csv('data/NLOS_2m_generated_4_ss95000_1.csv')
+# nlos_data = nlos_data[(nlos_data['RX_difference'] >10) & (nlos_data['RX_level'] <-85)]
+to_drop_index = nlos_data[(nlos_data['RX_difference'] <10) & (nlos_data['RX_level'] >-85)].index
+nlos_data.drop(to_drop_index, inplace = True)
 
 nlos_data["Class"] = 0
-# print(los_data.head())
-# print(nlos_data.head())
+
 dataframe = pd.concat([nlos_data, los_data], ignore_index=True)
 dataframe = dataframe.drop(["acquisition"], axis=1)
-dataframe['RX_level'] = dataframe['RX_level'] * (-1)
-print(f">>>>>>>>>>>>>>>>>>>>>>\nmax value is {dataframe['RX_level'].max()} and min is {dataframe['RX_level'].min()}")
+print(f">>>>>>>>>>>>>>>>>>>>>>\nRX_level max value is {dataframe['RX_level'].max()} and min is {dataframe['RX_level'].min()}")
+print(f">>>>>>>>>>>>>>>>>>>>>>\nRX_difference max value is {dataframe['RX_difference'].max()} and min is {dataframe['RX_difference'].min()}")
 
+# print(dataframe[dataframe['RX_difference'] <0])
 
-'scaler'
-# class_ = dataframe["Class"]
-# scaler = StandardScaler()
-# scaler.fit(dataframe.iloc[:, :-1])
-# dataframe = pd.DataFrame(scaler.transform(dataframe.iloc[:, :-1]), columns=list(dataframe.iloc[:, :-1].columns))
-# print(dataframe.shape)
-
-# print(dataframe)
 Y = dataframe.iloc[:, -1]
 X = dataframe.iloc[:, :-1]
-# Y = class_
-# X = dataframe
 
 
 
 x_train, x_test, y_train, y_test = train_test_split(
-            X, Y, test_size=0.2)
+            X, Y, test_size=0.3)
 
 
 def run_RFE(num_of_feature, classifier):
@@ -62,7 +60,7 @@ def run_RFE(num_of_feature, classifier):
 parameters_lgbm = {
         'boosting_type': 'gbdt',
         'num_leaves': 10,
-        'max_depth': 2,
+        'max_depth': 4,
         'n_estimators': 50,
         # 'verbose': 1,
         # 'learning_rate': 0.01,
@@ -79,7 +77,7 @@ parameters_lgbm = {
     }
 lgbm = LGBMClassifier(**parameters_lgbm)
 # run_RFE(4, lgbm)
-
+rf = RandomForestClassifier()
 
 def classification(method):
     method.fit(x_train, y_train)
@@ -93,6 +91,16 @@ def classification(method):
     # plt.show()
     plt.savefig(
         f"src/Data_analysis/plot_data/summary_plot.jpg")
+    plt.close()
+    'Dependence plot'
+    _selected_features = [i for i in x_test]
+    for i in range(len(_selected_features)):
+        # shap_values[0]>>to [1]
+        shap.dependence_plot(i, shap_values[1], x_test, show=False)
+        # plt.title(f"dependences")
+        plt.tight_layout()
+        plt.savefig(
+        f"src/Data_analysis/plot_data/Dep_plot_{i}.jpg")
     plt.close()
     "<<<<<<<<"
 
