@@ -27,12 +27,11 @@ class Plot_manager:
             ax = plt.gca()
             ax.cla()
             plt.title("Real-time map")
-
             for positions in self.mqtt.processed_data:
                 ax.plot(positions[0], positions[1],
                         label='movement', linestyle="--", alpha=0.5)
-                ax.plot((positions[0]), (positions[1]), 'o', color='g')
-                plt.text(positions[0], positions[1], f"person {tag}")
+                ax.plot((positions[0]), (positions[1]), 'o', color='g' if tag ==1 else "r")
+                plt.text(positions[0], positions[1], f"filtered {tag}" if tag == 1 else f"original {tag}")
                 circle = plt.Circle(
                     (positions[0], positions[1]), 0.5, color='b', fill=False)
                 ax.add_patch(circle)
