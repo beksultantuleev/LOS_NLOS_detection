@@ -80,7 +80,7 @@ if __name__ == "__main__":
                 num = 3 if count <100 else 15
                 test.publish('topic/1', f'1"[4, {count}, {65549343+np.random.randint(-100,200)}, {-78 - np.random.randint(1,3)}, {np.random.randint(5,9)}]')
                 test.publish('topic/2', f'2"[4, {count}, {65549343+np.random.randint(-100,100)}, {-78 - np.random.randint(1,3)}, {np.random.randint(5,9)}]')
-                test.publish('topic/3', f'3"[4, {count}, {65549343+np.random.randint(-100,100)}, {-78 - np.random.randint(1,3)}, {np.random.randint(5,9)}]')
+                test.publish('topic/3', f'3"[4, {count}, {65549343+np.random.randint(-100,100)}, {-78 - np.random.randint(1,3)}, {num}]')
                 test.publish('topic/4', f'4"[4, {count}, {65549343+np.random.randint(-100,100)}, {-78 - np.random.randint(1,3)}, {num}]')
                 test.publish('topic/5', f'5"[4, {count}, {65549343+np.random.randint(-100,100)}, {-78 - np.random.randint(1,3)}, {num}]')
                 

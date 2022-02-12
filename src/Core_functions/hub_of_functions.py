@@ -5,6 +5,12 @@ import time
 from Managers.Mqtt_manager import Mqtt_Manager
 import tensorflow as tf
 
+'for ts with An'
+def get_ts_with_An(ts_with_pred, A_n):
+    anchor_indices = ts_with_pred[:, 0].astype(int) - 1
+    A_n = A_n[anchor_indices, :, :]
+    ts_with_An = ts_with_pred[:, 1:], A_n
+    return ts_with_An
 
 'data transformation'
 def multiInputConfiguration(dataset, list_of_independent_vars, acquisition="acquisition"):
