@@ -5,7 +5,7 @@ import re
 import time
 import joblib
 # from Managers.Mqtt_manager import Mqtt_Manager
-from Managers.Anchor_manager import Anchor_manager
+# from Managers.Anchor_manager import Anchor_manager
 from Managers.Deque_manager import Deque_manager
 from Core_functions.hub_of_functions import *
 import tensorflow as tf
@@ -325,20 +325,36 @@ class NLOS_detection_and_Mitigation:
             f'1 filtered {np.array(self.raw_anchors_data)} \t  {self.pred_from_detection}')
         print(f'2 original {original}')
 
-    def project_athena(self, ts_with_los_prediction, los=1):
-        'in development'
-        'it will become smart anchor selection filter'
-        'embedd convex hull logic as well'
-        # print(ts_with_los_prediction)
+    def get_selected_anchors(self, los_anchors, nlos_anchors, A_n, coordinates, nlos_id, set_threshold=1.5):
+        if len(nlos_anchors) != 0:
+            for nlos_anch in nlos_anchors:
+                nlos_id.append(nlos_anch[0])
+                los_anchors = np.append(los_anchors, np.expand_dims(
+                    nlos_anch, axis=0), axis=0)
+                ts_with_An_los = get_ts_with_An(los_anchors, A_n)
+
+                coordinates.append(self.get_position(
+                    ts_with_An_los, in_2d=True)[0])
+        euclid_dist_between_points = cdist(
+            coordinates, coordinates, "euclidean")[0, :]
+        distance_deviation_and_anchor = list(
+            zip(np.delete(euclid_dist_between_points, 0), nlos_id))
+        for value in distance_deviation_and_anchor:
+            if value[0] > set_threshold:  # threshold
+                "delete  bad anchors"
+                los_anchors = los_anchors[los_anchors[:, 0] != value[1]]
+        # print(f'test nlos anch {nlos_id}')
+        return los_anchors
+
+    def smart_anchor_selection_filter(self, ts_with_los_prediction, los=1):
+
         A_n = self.anchor_postion_list
 
         los_anchors = np.empty(shape=(0, 4))
         nlos_anchors = np.empty(shape=(0, 4))
 
-        # print(ts_with_los_prediction)
         for value in ts_with_los_prediction:
             if value[-1] == los:
-                # print(value)
                 los_anchors = np.append(los_anchors, np.expand_dims(
                     value, axis=0), axis=0)
             else:
@@ -351,50 +367,28 @@ class NLOS_detection_and_Mitigation:
         nlos_id = []
         if len(los_anchors) >= 3:
             ts_with_An_los = get_ts_with_An(los_anchors, A_n)
+            'calculate first true position'
             coordinates[0] = self.get_position(ts_with_An_los, in_2d=True)[0]
-            if len(nlos_anchors) != 0:
-                for nlos_anch in nlos_anchors:
-                    nlos_id.append(nlos_anch[0])
-                    los_anchors = np.append(los_anchors, np.expand_dims(
-                        nlos_anch, axis=0), axis=0)
-                    ts_with_An_los = get_ts_with_An(los_anchors, A_n)
+            los_anchors = self.get_selected_anchors(
+                los_anchors, nlos_anchors, A_n, coordinates, nlos_id, set_threshold=1)
 
-                    coordinates.append(self.get_position(
-                        ts_with_An_los, in_2d=True)[0])
-
-            euclid_dist_between_points = cdist(
-                coordinates, coordinates, "euclidean")[0, :]
-            # print(euclid_dist_between_points)
-            # print(nlos_id)
-            distance_deviation_and_anchor = list(
-                zip(np.delete(euclid_dist_between_points, 0), nlos_id))
-            # print(distance_deviation_and_anchor)
-            for value in distance_deviation_and_anchor:
-                if value[0] > 1.5:  # threshold
-                    "delete  bad anchors"
-                    los_anchors = los_anchors[los_anchors[:, 0] != value[1]]
-            # print(los_anchors)
             ts_with_An_los = get_ts_with_An(los_anchors, A_n)
             estimated_position = self.get_position(ts_with_An_los)
             self.last_know_position = estimated_position[0]
-            # print(f'in if: >{len(coordinates)}')
-
             return estimated_position
         else:
-            coordinates[0] = self.last_know_position[:-1]
-            # print(coordinates)
-            for nlos_anch in nlos_anchors:
-                nlos_id.append(nlos_anch[0])
-                los_anchors = np.append(los_anchors, np.expand_dims(
-                    nlos_anch, axis=0), axis=0)
-                ts_with_An_los = get_ts_with_An(los_anchors, A_n)
+            try:
+                coordinates[0] = self.last_know_position[:-1]
+            except:
+                coordinates[0] = self.get_position((ts_with_los_prediction[:, 1:], A_n))[0][:-1]
 
-                coordinates.append(self.get_position(
-                    ts_with_An_los, in_2d=True)[0])
-            # print(f'in else: >{nlos_id}')
-            euclid_dist_between_points = cdist(
-                coordinates, coordinates, "euclidean")[0, :]
-            print(euclid_dist_between_points)
+            los_anchors = self.get_selected_anchors(
+                los_anchors, nlos_anchors, A_n, coordinates, nlos_id, set_threshold=1)
+            ts_with_An_los = get_ts_with_An(los_anchors, A_n)
+            estimated_position = self.get_position(ts_with_An_los)
+            self.last_know_position = estimated_position[0]
+            # print(f'in else {estimated_position}')
+            return estimated_position
 
 
 if __name__ == "__main__":
@@ -415,7 +409,7 @@ if __name__ == "__main__":
         ts_with_pred = test.simple_timestamp_filter()
         # pos = test.get_position(
         #     (ts_with_pred[:, 1:], anchors_pos), in_2d=True)
-        pos = test.project_athena(
+        pos = test.smart_anchor_selection_filter(
             ts_with_pred)
 
         print(pos)

@@ -1,6 +1,5 @@
-# class Anchor_manager:
-#     def __init__(self) -> None:
-#         pass
 
-if __name__=="__main__":
-    test = Anchor_manager()
+test_set = set()
+a = [0,1]
+test_set.add(a)
+print(test_set)
