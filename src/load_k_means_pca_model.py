@@ -12,15 +12,17 @@ import time
 
 
 
-"kmeans + pca"
-use_scaler = False
-single_data = False
+"kmeans + pca / gmm"
+use_kmeans = True
+use_scaler = True
+single_data = True
 acquisition_number = 4
 "acquisition 4 and multiple data works good"
 
 if single_data:
     pca_model = joblib.load('trained_models/pca.sav')
     k_means_model = joblib.load('trained_models/k_means.sav')
+    gmm_model = joblib.load('trained_models/gmm.sav')
     if use_scaler:
         scaler = joblib.load('trained_models/standard_scaler_pca_kmeans.save')
 else:
@@ -35,7 +37,7 @@ mqtt_conn = Mqtt_Manager(
 'for single data'
 if single_data:
     while True:
-        raw_data = mqtt_conn.processed_data[:] if mqtt_conn.processed_data else [0, 0]
+        raw_data = mqtt_conn.processed_data[:] if mqtt_conn.processed_data else [0, 0, 0, 0]
         # print(raw_data)
         if use_scaler:
             scaled_data = scaler.transform([raw_data])
@@ -45,7 +47,10 @@ if single_data:
             df = pca_model.transform([raw_data])
 
         # print(df)
-        pred = k_means_model.predict(df)
+        if use_kmeans:
+            pred = k_means_model.predict(df)
+        else:
+            pred = gmm_model.predict(df)
         mqtt_conn.publish("LOS", f'{pred}')
         print(pred)
 else:

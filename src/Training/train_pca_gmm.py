@@ -11,21 +11,18 @@ import sklearn.metrics as metrics
 from sklearn.mixture import GaussianMixture
 
 'PCA with GMM'
+'training was merged with kmeans pca'
 
 num_of_classes = 2
 save_models = True
-# use_scaler = True
-# single_data = True
-# num_of_acquisition = 4
+random_state = None
 
 "kmeans + pca train models"
 
-data_los = pd.read_csv('data/LOS_good_data_complete.csv')
-data_nlos = pd.read_csv('data/NLOS_good_data_complete.csv')
-data_nlos2 = pd.read_csv('data/NLOS_data_water_2_ss95000_1.csv')
-data_mix = pd.read_csv('data/additional_mix_data.csv')
-data = pd.concat([data_los, data_nlos, data_nlos2,
-                 data_mix], ignore_index=True)
+data_los = pd.read_csv('data/LOS_added_values_complete.csv')
+data_nlos = pd.read_csv('data/NLOS_added_values_4_ss45000_1.csv')
+
+data = pd.concat([data_los, data_nlos], ignore_index=True)
 
 
 def multiInputConfiguration(dataset, list_of_independent_vars, acquisition="acquisition"):
@@ -51,7 +48,7 @@ def acquisition_modifier(acquisition_number, length_of_acquisitions):
     return lis
 
 
-data = data.drop(["acquisition", ], axis=1)  # 'maxNoise'
+data = data.drop(["acquisition", ], axis=1) #'F2_std_noise'
 # print(data)
 
 # print(f"data is here! {data}")
@@ -67,14 +64,10 @@ df = pca.fit_transform(scaled_data)
 
 # print(df)
 
-'k means'
-# kmeans = KMeans(n_clusters=num_of_classes, random_state=42)
-# kmeans.fit(df)
-# label = kmeans.predict(df)
 
 'gmm'
-gm = GaussianMixture(n_components=2, random_state=42,
-                     covariance_type='tied', verbose=1, init_params='kmeans').fit(df)
+gm = GaussianMixture(n_components=2, 
+                     covariance_type='spherical', verbose=1, init_params='kmeans', random_state=random_state).fit(df) #random_state=42,
 label_proba = gm.predict_proba(df)
 label = gm.predict(df)
 # print(np.min(label))
@@ -97,4 +90,7 @@ plt.xlabel("Principal Component 1")
 plt.ylabel("Principal Component 2")
 plt.title("PCA with gmm")
 plt.tight_layout()
-plt.show()
+plt.savefig(
+    f"src/Data_analysis/plot_data/pca_gmm.png")
+plt.close()
+# plt.show()

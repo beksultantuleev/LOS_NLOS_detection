@@ -33,7 +33,7 @@ if single_data:
     autoencoder = load_model('trained_models/anomaly_detection_model')
     path = 'src/Training/logs/anomaly_detection/logs_Single_data_input.txt'
 
-    threshold = value_extractor("Threshold:", path)
+    threshold = 0.01#value_extractor("Threshold:", path) 0.008/ 0.01
     min_val = value_extractor("Min_val:", path)
     max_val = value_extractor("Max_val:", path)
 else:

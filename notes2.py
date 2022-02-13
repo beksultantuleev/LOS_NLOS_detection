@@ -8,12 +8,12 @@ import os
 import pathlib
 
 dataframe = pd.DataFrame()
-path = f"{pathlib.Path().absolute()}/data/good_nlos_data/"
+path = f"{pathlib.Path().absolute()}/data/los_data_added_values/"
 for root, dirs, files in os.walk(path):
     for i in files:
 
         # print(i)
-        data = pd.read_csv(f'data/good_nlos_data/{i}')
+        data = pd.read_csv(f'data/los_data_added_values/{i}')
         dataframe = pd.concat([dataframe, data], ignore_index=True)
 
 # print(dataframe)
@@ -32,8 +32,8 @@ def acquisition_modifier(acquisition_number, length_of_acquisitions):
     lis = sorted(lis*acquisition_number)[:length_of_acquisitions]
     return lis
 
-dataframe['acquisition'] = acquisition_modifier(2, len(dataframe))
-dataframe = dataframe.drop(["maxNoise"], axis= 1)
+# dataframe['acquisition'] = acquisition_modifier(2, len(dataframe))
+# dataframe = dataframe.drop(["maxNoise"], axis= 1)
 
 print(dataframe)
-dataframe.to_csv("data/NLOS_good_data_complete.csv", index=None)
+# dataframe.to_csv("data/LOS_added_values_complete.csv", index=None)

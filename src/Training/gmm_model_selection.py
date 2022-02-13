@@ -26,12 +26,11 @@ save_models = True
 
 "kmeans + pca train models"
 
-data_los = pd.read_csv('data/LOS_good_data_complete.csv')
-data_nlos = pd.read_csv('data/NLOS_good_data_complete.csv')
-data_nlos2 = pd.read_csv('data/NLOS_data_water_2_ss95000_1.csv')
-data_mix = pd.read_csv('data/additional_mix_data.csv')
-data = pd.concat([data_los, data_nlos, data_nlos2, data_mix], ignore_index=True)
-data = data.drop(["acquisition", ], axis=1)  # 'maxNoise'
+data_los = pd.read_csv('data/LOS_added_values_complete.csv')
+data_nlos = pd.read_csv('data/NLOS_added_values_4_ss45000_1.csv')
+
+data = pd.concat([data_los, data_nlos], ignore_index=True)
+data = data.drop(["acquisition", ], axis=1)  # ''F2_std_noise''
 # print(data)
 
 # print(f"data is here! {data}")
@@ -120,4 +119,7 @@ plt.title(
     f"{best_gmm.n_components} components"
 )
 plt.subplots_adjust(hspace=0.35, bottom=0.02)
-plt.show()
+plt.savefig(
+    f"src/Data_analysis/plot_data/gmm_model_selection.png")
+plt.close()
+# plt.show()

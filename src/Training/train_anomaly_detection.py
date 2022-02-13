@@ -22,7 +22,7 @@ class Train_anomaly_detection_model():
         self.number_of_features = len(self.list_of_features)
         self.rewrite_logs = True
 
-    def set_configuration(self, rewrite_logs = True, single_data_input=True, save_model=False, turn_on_all_plots=True, list_of_features=["RX_level", 'RX_difference'], acquisition_number=2):
+    def set_configuration(self, rewrite_logs=True, single_data_input=True, save_model=False, turn_on_all_plots=True, list_of_features=["RX_level", 'RX_difference'], acquisition_number=2):
         self.single_data_input = single_data_input
         self.save_model = save_model
         self.turn_on_all_plots = turn_on_all_plots
@@ -241,7 +241,7 @@ Recall: {recall_score(labels, predictions)}
                     f"src/Training/logs/anomaly_detection/logs_{log_name}.txt", "w")
                 file.write(log)
                 file.close()
-            
+
             print(f'rewrite losg>>{self.rewrite_logs} \n{log}')
 
         preds = predict(autoencoder, self.x_test, threshold)
@@ -250,10 +250,11 @@ Recall: {recall_score(labels, predictions)}
 
 if "__main__" == __name__:
     test = Train_anomaly_detection_model()
-    list_of_features = ["RX_level", 'RX_difference']
-    test.set_configuration(single_data_input=True, save_model=False,
+    list_of_features = ["RX_level", 'RX_difference',
+                        'F2_std_noise','std_noise'] #'F2_std_noise',
+    test.set_configuration(single_data_input=True, save_model=True,
                            turn_on_all_plots=True, list_of_features=list_of_features,
-                           acquisition_number=4, rewrite_logs=False)
-    test.select_dataset('data/los_improved_data.csv',
-                        'data/nlos_improved_data.csv', sklearn_scale=False)
+                           acquisition_number=4, rewrite_logs=True)
+    test.select_dataset('data/LOS_added_values_complete.csv',
+                        'data/NLOS_added_values_4_ss45000_1.csv', sklearn_scale=False)
     test.start_training(epochs=25)

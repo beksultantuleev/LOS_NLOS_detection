@@ -16,7 +16,7 @@ class Listener():
         self.data_folder = 'data'
         self.dataset_name = ""
         self.acquisition_number = 1
-        self.list_of_features = ["RX_level", "RX_difference"]
+        self.list_of_features = ["RX_level", "RX_difference", 'F2_std_noise', 'std_noise']
         # self.list_of_features = ["RX_level",
         #                          "RX_difference", "CIR", "F1", "F2", "F3"]
         self.via_port_reader = via_port_reader
@@ -106,9 +106,9 @@ if __name__ == "__main__":
     start = timeit.default_timer()
 
     test = Listener(via_port_reader=True)
-    test.set_dataset_name("NLOS_2m_new")
+    test.set_dataset_name("NLOS_added_values")
     test.set_acquisition_number(4)
-    test.set_sample_size(5000)
+    test.set_sample_size(45000)
     limiter = 0
     while limiter != test.samples:
         # sleep(0.05) #for mqtt??
