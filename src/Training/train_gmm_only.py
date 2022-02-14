@@ -10,8 +10,8 @@ import joblib
 import sklearn.metrics as metrics
 from sklearn.mixture import GaussianMixture
 
-'PCA with GMM'
-'dont use it. use gmm only file'
+'GMM'
+'training was merged with kmeans pca'
 
 num_of_classes = 2
 save_models = True
@@ -48,7 +48,7 @@ def acquisition_modifier(acquisition_number, length_of_acquisitions):
     return lis
 
 
-data = data.drop(["acquisition", ], axis=1) #'F2_std_noise'
+data = data.drop(["acquisition", ], axis=1)  # 'F2_std_noise'
 # print(data)
 
 # print(f"data is here! {data}")
@@ -56,20 +56,20 @@ data = data.drop(["acquisition", ], axis=1) #'F2_std_noise'
 scaler = StandardScaler()
 scaler.fit(data)
 scaled_data = scaler.transform(data)
-pca = PCA(n_components=2)
+# pca = PCA(n_components=2)
 # print(f'scaled data is here! {scaled_data}')
 # Transform the data
 
-df = pca.fit_transform(scaled_data)
+# df = pca.fit_transform(scaled_data)
 
 # print(df)
 
 
 'gmm'
-gm = GaussianMixture(n_components=2, 
-                     covariance_type='spherical', verbose=1, init_params='kmeans', random_state=random_state).fit(df) #random_state=42,
-label_proba = gm.predict_proba(df)
-label = gm.predict(df)
+gm = GaussianMixture(n_components=num_of_classes,
+                     covariance_type='diag', verbose=1, init_params='kmeans', random_state=random_state).fit(scaled_data)  # random_state=42,
+label_proba = gm.predict_proba(scaled_data)
+label = gm.predict(scaled_data)
 # print(np.min(label))
 # print(label)
 
@@ -78,19 +78,21 @@ label = gm.predict(df)
 if save_models:
     'pca and scaler is the same as for kmeans'
     joblib.dump(gm, 'trained_models/gmm.sav')
+    joblib.dump(
+        scaler, 'trained_models/standard_scaler_gmm.save')
 
 "plotting"
 # filter rows of original data
 for i in range(num_of_classes):
-    filtered_label = df[label == i]
+    filtered_label = scaled_data[label == i]
     # Plotting the results
     plt.scatter(filtered_label[:, 0], filtered_label[:, 1])
 
-plt.xlabel("Principal Component 1")
-plt.ylabel("Principal Component 2")
-plt.title("PCA with gmm")
+plt.xlabel("Component 1")
+plt.ylabel("Component 2")
+plt.title(" gmm")
 plt.tight_layout()
 plt.savefig(
-    f"src/Data_analysis/plot_data/pca_gmm.png")
+    f"src/Data_analysis/plot_data/gmm_only.png")
 plt.close()
 # plt.show()

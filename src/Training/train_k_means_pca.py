@@ -10,18 +10,18 @@ import joblib
 import sklearn.metrics as metrics
 from sklearn.mixture import GaussianMixture
 
-'PCA with k means / gmm'
+'PCA with k means'
 
 num_of_classes = 2
 save_models = True
 use_scaler = True
 single_data = True
 num_of_acquisition = 4
-random_state = None
+random_state = 42
 "kmeans + pca train models"
 
 data_los = pd.read_csv('data/LOS_added_values_complete.csv')
-data_nlos = pd.read_csv('data/NLOS_added_values_4_ss45000_1.csv')
+data_nlos = pd.read_csv('data/NLOS_added_values_2_ss29988_1.csv')
 # data_nlos2 = pd.read_csv('data/NLOS_data_water_2_ss95000_1.csv')
 # data_mix = pd.read_csv('data/additional_mix_data.csv')
 # data = pd.concat([data_los, data_nlos, data_nlos2, data_mix], ignore_index=True)
@@ -95,7 +95,7 @@ if save_models:
                 scaler, 'trained_models/standard_scaler_pca_kmeans.save')
         joblib.dump(pca, 'trained_models/pca.sav')
         joblib.dump(kmeans, 'trained_models/k_means.sav')
-        # joblib.dump(gm, 'trained_models/gmm.sav')
+
 
     else:
         if use_scaler:

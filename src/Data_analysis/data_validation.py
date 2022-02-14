@@ -24,7 +24,7 @@ plot_roc_prc = False
 los_data = pd.read_csv('data/LOS_added_values_complete.csv')
 los_data["Class"] = 1
 
-nlos_data = pd.read_csv('data/NLOS_added_values_4_ss45000_1.csv')
+nlos_data = pd.read_csv('data/NLOS_added_values_2_ss29988_1.csv')
 # nlos_data = pd.read_csv('data/NLOS_data_water_2_ss95000_1.csv')
 # nlos_data = pd.read_csv('data/NLOS_1m_test_4_ss5000_1.csv')
 nlos_data["Class"] = 0
@@ -57,6 +57,7 @@ df_anomaly = (x_train.values -
 'kmeans pca and gmm'
 pca_model = joblib.load('trained_models/pca.sav')
 scaler = joblib.load('trained_models/standard_scaler_pca_kmeans.save')
+scaler_gmm = joblib.load('trained_models/standard_scaler_gmm.save')
 k_means_model = joblib.load('trained_models/k_means.sav')
 gmm_model = joblib.load('trained_models/gmm.sav')
 
@@ -70,12 +71,13 @@ gmm_model = joblib.load('trained_models/gmm.sav')
 # print(pred_proba)
 'end testing'
 scaled_data = scaler.transform(x_train)
+scaled_data_for_gmm = scaler_gmm.transform(x_train)
 df = pca_model.transform(scaled_data)
 
 
 pred = [0]*3
 pred[0] = k_means_model.predict(df)
-pred[1] = gmm_model.predict(df)
+pred[1] = gmm_model.predict(scaled_data_for_gmm)
 pred[2] = predict_anomaly_detection(autoencoder, df_anomaly, threshold)
 
 
@@ -100,7 +102,7 @@ for i in range(len(pred)):
         plt.show()
 
 if plot_roc_prc:
-    pred[2] = gmm_model.predict_proba(df)[:, 1]
+    pred[2] = gmm_model.predict_proba(scaled_data_for_gmm)[:, 1]
     'roc'
     for i in range(len(pred)):
         plt.style.use('fivethirtyeight')

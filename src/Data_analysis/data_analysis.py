@@ -19,9 +19,10 @@ los_data["Class"] = 1
 # print(los_data[los_data['RX_difference'] <0])
 
 
-nlos_data = pd.read_csv('data/NLOS_added_values_4_ss45000_1.csv')
+nlos_data = pd.read_csv('data/NLOS_added_values_2_ss29988_1.csv')
 
 # print(nlos_data[nlos_data['RX_difference'] <0])
+# nlos_data = nlos_data[nlos_data['RX_difference'] >0]
 # to_drop_index = nlos_data[(nlos_data['RX_difference'] <10) & (nlos_data['RX_level'] >-85)].index
 # nlos_data.drop(to_drop_index, inplace = True)
 

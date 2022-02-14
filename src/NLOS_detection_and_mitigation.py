@@ -327,9 +327,16 @@ class NLOS_detection_and_Mitigation:
     def get_selected_anchors(self, los_anchors, nlos_anchors, A_n, coordinates, nlos_id, set_threshold=1.5):
         if len(nlos_anchors) != 0:
             for nlos_anch in nlos_anchors:
+                "check this logic"
+                if len(los_anchors)<2:
+                    while len(los_anchors)!=2:
+                        nlos_id.append(nlos_anch[0])
+                        los_anchors = np.append(los_anchors, np.expand_dims(
+                    nlos_anch, axis=0), axis=0)
+
                 nlos_id.append(nlos_anch[0])
                 los_anchors = np.append(los_anchors, np.expand_dims(
-                    nlos_anch, axis=0), axis=0)
+                    nlos_anch, axis=0), axis=0)      
                 ts_with_An_los = get_ts_with_An(los_anchors, A_n)
 
                 coordinates.append(self.get_position(
@@ -345,7 +352,7 @@ class NLOS_detection_and_Mitigation:
         # print(f'test nlos anch {nlos_id}')
         return los_anchors
 
-    def smart_anchor_selection_filter(self, ts_with_los_prediction, los=1):
+    def smart_anchor_selection_filter(self, ts_with_los_prediction, los=1, in_2d=False):
 
         A_n = self.anchor_postion_list
 
@@ -372,21 +379,22 @@ class NLOS_detection_and_Mitigation:
                 los_anchors, nlos_anchors, A_n, coordinates, nlos_id, set_threshold=1)
 
             ts_with_An_los = get_ts_with_An(los_anchors, A_n)
-            estimated_position = self.get_position(ts_with_An_los)
-            self.last_know_position = estimated_position[0]
+            estimated_position = self.get_position(ts_with_An_los, in_2d=in_2d)
+            'check this '
+            self.last_know_position = estimated_position[0][:-1] if not in_2d else estimated_position[0]
             return estimated_position
         else:
             try:
-                coordinates[0] = self.last_know_position[:-1]
+                coordinates[0] = self.last_know_position
             except:
                 coordinates[0] = self.get_position(
-                    (ts_with_los_prediction[:, 1:], A_n))[0][:-1]
+                    (ts_with_los_prediction[:, 1:], A_n), in_2d=True)[0]
 
             los_anchors = self.get_selected_anchors(
                 los_anchors, nlos_anchors, A_n, coordinates, nlos_id, set_threshold=1)
             ts_with_An_los = get_ts_with_An(los_anchors, A_n)
-            estimated_position = self.get_position(ts_with_An_los)
-            self.last_know_position = estimated_position[0]
+            estimated_position = self.get_position(ts_with_An_los, in_2d=in_2d)
+            self.last_know_position = estimated_position[0][:-1] if not in_2d else estimated_position[0]
             # print(f'in else {estimated_position}')
             return estimated_position
 

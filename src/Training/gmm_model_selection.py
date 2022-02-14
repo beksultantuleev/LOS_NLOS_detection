@@ -17,32 +17,29 @@ import matplotlib as mpl
 
 from sklearn import mixture
 
-'use pca with scaler. its better'
+
 num_of_classes = 2
 save_models = True
-# use_scaler = True
-# single_data = True
-# num_of_acquisition = 4
 
-"kmeans + pca train models"
+
 
 data_los = pd.read_csv('data/LOS_added_values_complete.csv')
-data_nlos = pd.read_csv('data/NLOS_added_values_4_ss45000_1.csv')
+data_nlos = pd.read_csv('data/NLOS_added_values_2_ss29988_1.csv')
 
 data = pd.concat([data_los, data_nlos], ignore_index=True)
 data = data.drop(["acquisition", ], axis=1)  # ''F2_std_noise''
-# print(data)
 
-# print(f"data is here! {data}")
 
 scaler = StandardScaler()
 scaler.fit(data)
 scaled_data = scaler.transform(data)
-pca = PCA(n_components=2)
+'pca'
+# pca = PCA(n_components=2)
 # print(f'scaled data is here! {scaled_data}')
 # Transform the data
 
-X = pca.fit_transform(scaled_data)
+# X = pca.fit_transform(scaled_data)
+X = scaled_data
 
 # print(df)
 "end of my part"

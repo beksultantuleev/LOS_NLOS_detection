@@ -1,7 +1,7 @@
 from serial import Serial
 import json
 import numpy as np
-from Managers.Mqtt_manager import Mqtt_Manager
+from Mqtt_manager import Mqtt_Manager
 import time
 
 class SerialPortReader():

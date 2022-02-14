@@ -35,5 +35,8 @@ def acquisition_modifier(acquisition_number, length_of_acquisitions):
 # dataframe['acquisition'] = acquisition_modifier(2, len(dataframe))
 # dataframe = dataframe.drop(["maxNoise"], axis= 1)
 
+dataframe = dataframe[dataframe["RX_difference"]>0]
+# print(dataframe[dataframe["RX_difference"]<0])
 print(dataframe)
+
 # dataframe.to_csv("data/LOS_added_values_complete.csv", index=None)
