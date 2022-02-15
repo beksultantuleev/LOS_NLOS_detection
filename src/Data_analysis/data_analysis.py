@@ -29,9 +29,9 @@ nlos_data = pd.read_csv('data/NLOS_added_values_2_ss29988_1.csv')
 nlos_data["Class"] = 0
 
 dataframe = pd.concat([nlos_data, los_data], ignore_index=True)
-dataframe = dataframe.drop(["acquisition"], axis=1)#, "F2_std_noise"
-print(f">>>>>>>>>>>>>>>>>>>>>>\nRX_level max value is {dataframe['RX_level'].max()} and min is {dataframe['RX_level'].min()}")
-print(f">>>>>>>>>>>>>>>>>>>>>>\nRX_difference max value is {dataframe['RX_difference'].max()} and min is {dataframe['RX_difference'].min()}")
+dataframe = dataframe.drop(["acquisition",], axis=1)#, "F2_std_noise"
+# print(f">>>>>>>>>>>>>>>>>>>>>>\nRX_level max value is {dataframe['RX_level'].max()} and min is {dataframe['RX_level'].min()}")
+# print(f">>>>>>>>>>>>>>>>>>>>>>\nRX_difference max value is {dataframe['RX_difference'].max()} and min is {dataframe['RX_difference'].min()}")
 
 # print(dataframe[dataframe['RX_difference'] <0])
 

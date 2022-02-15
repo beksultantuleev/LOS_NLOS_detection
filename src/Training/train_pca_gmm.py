@@ -11,7 +11,7 @@ import sklearn.metrics as metrics
 from sklearn.mixture import GaussianMixture
 
 'PCA with GMM'
-'dont use it. use gmm only file'
+'use this one instead of GMM only'
 
 num_of_classes = 2
 save_models = True
@@ -67,7 +67,7 @@ df = pca.fit_transform(scaled_data)
 
 'gmm'
 gm = GaussianMixture(n_components=2, 
-                     covariance_type='spherical', verbose=1, init_params='kmeans', random_state=random_state).fit(df) #random_state=42,
+                     covariance_type='full', verbose=1, init_params='kmeans', random_state=random_state).fit(df) #random_state=42,
 label_proba = gm.predict_proba(df)
 label = gm.predict(df)
 # print(np.min(label))

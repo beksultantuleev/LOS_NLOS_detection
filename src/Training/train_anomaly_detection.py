@@ -175,7 +175,10 @@ class Train_anomaly_detection_model():
             plt.xlabel("Features")
             plt.ylabel("Data points")
             plt.title("Reconstruction of Normal Data")
-            plt.show()
+            plt.savefig(
+                f"src/Data_analysis/plot_data/reconstruction_normal_data.png")
+            plt.close()
+            # plt.show()
         # plt.close()
 
         encoded_data = autoencoder.encoder(self.anomalous_test_data).numpy()
@@ -189,7 +192,10 @@ class Train_anomaly_detection_model():
             plt.xlabel("Features")
             plt.ylabel("Data points")
             plt.title("Reconstruction of Anomalous Data")
-            plt.show()
+            plt.savefig(
+                f"src/Data_analysis/plot_data/reconstruction_anomaly_data.png")
+            plt.close()
+            # plt.show()
             # plt.close()
 
         reconstructions = autoencoder.predict(self.normal_train_data)
@@ -251,7 +257,7 @@ Recall: {recall_score(labels, predictions)}
 if "__main__" == __name__:
     test = Train_anomaly_detection_model()
     list_of_features = ["RX_level", 'RX_difference',
-                        'std_noise', 'PMR', 'SNR']  
+                        'std_noise', 'PMR', 'SNR']
     test.set_configuration(single_data_input=True, save_model=True,
                            turn_on_all_plots=True, list_of_features=list_of_features,
                            acquisition_number=4, rewrite_logs=True)

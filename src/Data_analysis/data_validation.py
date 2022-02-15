@@ -15,8 +15,8 @@ import seaborn as sns
 to validate data and plot confusion matrix, ROC and PRC
 '''
 "control here"
-plot_cm = False
-plot_roc_prc = False
+plot_cm = True
+plot_roc_prc = True
 
 
 'select data'
@@ -29,7 +29,7 @@ nlos_data = pd.read_csv('data/NLOS_added_values_2_ss29988_1.csv')
 # nlos_data = pd.read_csv('data/NLOS_1m_test_4_ss5000_1.csv')
 nlos_data["Class"] = 0
 dataframe = pd.concat([nlos_data, los_data], ignore_index=True)
-dataframe = dataframe.drop(["acquisition", ], axis=1) #'F2_std_noise'
+dataframe = dataframe.drop(["acquisition", ], axis=1)  # 'F2_std_noise'
 
 
 Y = dataframe.iloc[:, -1]
@@ -71,13 +71,14 @@ gmm_model = joblib.load('trained_models/gmm.sav')
 # print(pred_proba)
 'end testing'
 scaled_data = scaler.transform(x_train)
-scaled_data_for_gmm = scaler_gmm.transform(x_train)
+# scaled_data_for_gmm = scaler_gmm.transform(x_train)
 df = pca_model.transform(scaled_data)
 
 
 pred = [0]*3
 pred[0] = k_means_model.predict(df)
-pred[1] = gmm_model.predict(scaled_data_for_gmm)
+# pred[1] = gmm_model.predict(scaled_data_for_gmm)
+pred[1] = gmm_model.predict(df)
 pred[2] = predict_anomaly_detection(autoencoder, df_anomaly, threshold)
 
 
@@ -92,20 +93,24 @@ for i in range(len(pred)):
     precision = metrics.precision_score(y_train, pred[i])
     recall_score = metrics.recall_score(y_train, pred[i])
     print(cm)
-    print(f'accuracy {accuracy} \nprecision {precision} \nrecall {recall_score}')
+    print(
+        f'accuracy {accuracy} \nprecision {precision} \nrecall {recall_score}')
     if plot_cm:
 
         plt.style.use('default')
         sns.heatmap(cm, annot=True, fmt='', cmap='Blues')
         plt.title(f"{model_name[i]}")
         # plt.title(f"{'PCA with GMM'}")
-        plt.show()
+        plt.savefig(
+            f"src/Data_analysis/plot_data/cm_{model_name[i]}.png")
+        plt.close()
+        # plt.show()
 
 if plot_roc_prc:
-    pred[2] = gmm_model.predict_proba(scaled_data_for_gmm)[:, 1]
+    pred[2] = gmm_model.predict_proba(df)[:, 1]
     'roc'
     for i in range(len(pred)):
-        plt.style.use('fivethirtyeight')
+        # plt.style.use('fivethirtyeight')
         fpr, tpr, thresh = metrics.roc_curve(y_train, pred[2])
         auc = metrics.roc_auc_score(y_train, pred[2])
         precision, recall, thresholds = metrics.precision_recall_curve(
@@ -121,7 +126,10 @@ if plot_roc_prc:
     plt.title(f"Precision-Recall graph")
     plt.legend(loc="best")
     plt.tight_layout()
-    plt.show()
+    # plt.show()
+    plt.savefig(
+        f"src/Data_analysis/plot_data/PRC.png")
+    plt.close()
     'roc'
     plt.plot(
         fpr, tpr, label=f"PCA with GMM, auc= {auc:.4f}")
@@ -129,8 +137,11 @@ if plot_roc_prc:
     plt.ylabel("True Positive Rate")
     plt.title(f"ROC graph")
     plt.plot([0, 1], [0, 1], linestyle="--",
-                c="black", linewidth=2)
+             c="black", linewidth=2)
 
     plt.legend(loc="best")
     plt.tight_layout()
-    plt.show()
+    plt.savefig(
+        f"src/Data_analysis/plot_data/ROC.png")
+    plt.close()
+    # plt.show()

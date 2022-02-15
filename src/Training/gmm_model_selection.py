@@ -34,12 +34,12 @@ scaler = StandardScaler()
 scaler.fit(data)
 scaled_data = scaler.transform(data)
 'pca'
-# pca = PCA(n_components=2)
-# print(f'scaled data is here! {scaled_data}')
+pca = PCA(n_components=2)
+print(f'scaled data is here! {scaled_data}')
 # Transform the data
 
-# X = pca.fit_transform(scaled_data)
-X = scaled_data
+X = pca.fit_transform(scaled_data)
+# X = scaled_data
 
 # print(df)
 "end of my part"

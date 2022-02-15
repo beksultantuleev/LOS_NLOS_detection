@@ -37,7 +37,7 @@ mqtt_conn = Mqtt_Manager(
 'for single data'
 if single_data:
     while True:
-        raw_data = mqtt_conn.processed_data[:] if mqtt_conn.processed_data else [0, 0, 0, 0]
+        raw_data = mqtt_conn.processed_data[:] if mqtt_conn.processed_data else [0, 0, 0, 0, 0]
         # print(raw_data)
         if use_scaler:
             scaled_data = scaler.transform([raw_data])

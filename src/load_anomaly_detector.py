@@ -59,7 +59,7 @@ def predict(model, data, threshold):
 if single_data:
     while True:
         raw_data = np.array(
-            mqtt_conn.processed_data)[:] if mqtt_conn.processed_data else np.array([0, 0])
+            mqtt_conn.processed_data)[:] if mqtt_conn.processed_data else np.array([0, 0, 0, 0, 0])
         if use_scaler:
             "not finished yet"
             scaled_data = scaler.transform([raw_data])

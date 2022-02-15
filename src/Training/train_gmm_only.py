@@ -67,7 +67,7 @@ scaled_data = scaler.transform(data)
 
 'gmm'
 gm = GaussianMixture(n_components=num_of_classes,
-                     covariance_type='diag', verbose=1, init_params='kmeans', random_state=random_state).fit(scaled_data)  # random_state=42,
+                     covariance_type='full', verbose=1, init_params='kmeans', random_state=random_state).fit(scaled_data)  # random_state=42,
 label_proba = gm.predict_proba(scaled_data)
 label = gm.predict(scaled_data)
 # print(np.min(label))
