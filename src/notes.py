@@ -15,8 +15,12 @@ from scipy.spatial.distance import cdist
 from scipy.spatial import ConvexHull
 
 
-lis = np.array([[1,2,3], [4,5,6]])
-print(lis)
-np.random.shuffle(lis)
-print(lis)
+# lis = np.array([[10,15,3], [10,14,20], [5,14,21]])
+# print(lis)
+# print(np.mean(lis, axis=0))
+# print(np.median(lis, axis=0))
 
+lis = np.array([10, 10, 10, 4, 10, 100, 10, 3])
+print(lis)
+print(np.mean(lis, axis=0))
+print(np.median(lis, axis=0))
