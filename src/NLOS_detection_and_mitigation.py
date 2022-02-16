@@ -31,6 +31,7 @@ class NLOS_detection_and_Mitigation:
         self.amount_of_anchors = len(self.anchor_postion_list)
         self.raw_anchors_data = [0]*self.amount_of_anchors
         self.processed_anchors_data = None
+        self.number_of_features = 5
 
         self.modified_ts = [0]*len(self.anchor_postion_list)
         self.deque_list = [0]*len(self.anchor_postion_list)
@@ -82,12 +83,12 @@ class NLOS_detection_and_Mitigation:
             time.sleep(0.9)
             self.pca_wait_flag = False
         raw_anchors_data = np.delete(np.array(self.raw_anchors_data), 2, 1)
-        self.vanilla_ts = raw_anchors_data[:, :-2]
-        input_data = np.array(raw_anchors_data)[:, -2:]
+        self.vanilla_ts = raw_anchors_data[:, :-(self.number_of_features)]
+        input_data = np.array(raw_anchors_data)[:, -(self.number_of_features):]
         df = self.pca_model.transform(input_data)
         self.pred_from_detection = self.k_means_model.predict(df)
         self.processed_anchors_data = np.c_[
-            raw_anchors_data[:, :-2], self.pred_from_detection]
+            raw_anchors_data[:, :-(self.number_of_features)], self.pred_from_detection]
         if not self.data_collection_complete:
             self.data_detection = np.append(self.data_detection, np.expand_dims(
                 self.pred_from_detection, axis=0), axis=0)
@@ -98,15 +99,14 @@ class NLOS_detection_and_Mitigation:
         "true or 1 is LOS"
         raw_anchors_data = np.delete(np.array(self.raw_anchors_data), 2, 1)
 
-        self.vanilla_ts = raw_anchors_data[:, :-2]
-        raw_data = np.array(raw_anchors_data)[:, -2:]
+        self.vanilla_ts = raw_anchors_data[:, :-(self.number_of_features)]
+        raw_data = np.array(raw_anchors_data)[:, -(self.number_of_features):]
         input_data = (np.array(raw_data) -
                       self.min_val) / (self.max_val - self.min_val)
         self.pred_from_detection = predict_anomaly_detection(
             self.autoencoder, input_data, self.threshold)
         self.processed_anchors_data = np.c_[
-            raw_anchors_data[:, :-2], self.pred_from_detection]
-
+            raw_anchors_data[:, :-(self.number_of_features)], self.pred_from_detection]
         if not self.data_collection_complete:
             self.data_detection = np.append(self.data_detection, np.expand_dims(
                 self.pred_from_detection, axis=0), axis=0)
@@ -130,7 +130,7 @@ class NLOS_detection_and_Mitigation:
             counter += 1
         return np.array(self.modified_ts)
 
-    def smart_timestamp_filter(self, los=1):
+    def std_ts_filter(self, los=1):
         counter = 0
         for t in self.processed_anchors_data:
             'get right std and avrgs'
@@ -307,7 +307,7 @@ class NLOS_detection_and_Mitigation:
 
     def publish(self):
         'first is filtered and second is original'
-        ts_with_pred = self.smart_timestamp_filter()
+        ts_with_pred = self.std_ts_filter()
         # ts_with_pred = test.simple_timestamp_filter()
         # print(self.vanilla_ts[:,1:])
         filtered = test.get_position(
@@ -384,11 +384,13 @@ class NLOS_detection_and_Mitigation:
             self.last_know_position = estimated_position[0][:-1] if not in_2d else estimated_position[0]
             return estimated_position
         else:
-            try:
+
+            if self.last_know_position != None:
                 coordinates[0] = self.last_know_position
-            except:
+            else:
                 coordinates[0] = self.get_position(
-                    (ts_with_los_prediction[:, 1:], A_n), in_2d=True)[0]
+                (ts_with_los_prediction[:, 1:], A_n), in_2d=True)[0]
+
 
             los_anchors = self.get_selected_anchors(
                 los_anchors, nlos_anchors, A_n, coordinates, nlos_id, set_threshold=1)
@@ -404,31 +406,34 @@ if __name__ == "__main__":
     A_n1 = np.array([[2], [2], [0.9]])
     A_n2 = np.array([[0], [0], [0.5]])
     A_n3 = np.array([[5], [0], [1.8]])  # master
-    # A_n4 = np.array([[3], [5], [1]])  # master
-    # A_n5 = np.array([[2], [5], [4]])  # master
-    # anchors_pos = np.array([A_n1, A_n2, A_n3, A_n4, A_n5])
-    anchors_pos = np.array([A_n1, A_n2, A_n3])
+    A_n4 = np.array([[3], [5], [1]])  # master
+    A_n5 = np.array([[2], [5], [4]])  # master
+    anchors_pos = np.array([A_n1, A_n2, A_n3, A_n4, A_n5])
+    # anchors_pos = np.array([A_n1, A_n2, A_n3])
     # print(A_n1.shape)
     test = NLOS_detection_and_Mitigation(anchor_postion_list=anchors_pos)
     while True:
-        'adding anchor number from start'
-        # time.sleep(0.4)
-        # test.anomaly_detection()
-        # # ts_with_pred = test.simple_timestamp_filter()
+        'testing'
+        time.sleep(0.4)
+        test.anomaly_detection()
+        # print(test.pred_from_detection)
+
+        ts_with_pred = test.simple_timestamp_filter()
+        # print(ts_with_pred)
         # ts_with_pred = test.smart_timestamp_filter()
         # # print(ts_with_pred)
         # # pos = test.get_position(
         # #     (ts_with_pred[:, 1:], anchors_pos), in_2d=True)
-        # pos = test.smart_anchor_selection_filter(
-        #     ts_with_pred)
+        pos = test.smart_anchor_selection_filter(
+            ts_with_pred, in_2d=True)
 
-        # print(pos)
+        print(pos)
 
         'with grand model'
-        time.sleep(0.1)
+        # time.sleep(0.1)
+        # # test.anomaly_detection()
         # test.anomaly_detection()
-        test.anomaly_detection()
-        test.publish()
+        # test.publish()
 
         "anomaly detection"
         # time.sleep(0.2)

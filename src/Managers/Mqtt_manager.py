@@ -77,12 +77,12 @@ if __name__ == "__main__":
                 # test.publish('allInOne', f'[[{-79+np.random.random()+np.random.randint(-1,1)}, {5+np.random.randint(-3,10)+np.random.random()}], [{-79+np.random.random()+np.random.randint(-1,1)}, {5+np.random.randint(-3,10)+np.random.random()}], [{-79+np.random.random()+np.random.randint(-1,1)}, {5+np.random.randint(-3,10)+np.random.random()}]]')
                 time.sleep(0.1)
                 'raw anchor data'
-                num = 3 if count <100 else 15
-                test.publish('topic/1', f'1"[4, {count}, {65549343+np.random.randint(-100,200)}, {-78 - np.random.randint(1,3)}, {np.random.randint(5,10)}]')
-                test.publish('topic/2', f'2"[4, {count}, {65549343+np.random.randint(-100,100)}, {-78 - np.random.randint(1,3)}, {np.random.randint(5,10)}]')
-                test.publish('topic/3', f'3"[4, {count}, {65549343+np.random.randint(-100,100)}, {-78 - np.random.randint(1,3)}, {np.random.randint(5,10)}]')
-                test.publish('topic/4', f'4"[4, {count}, {65549343+np.random.randint(-100,100)}, {-78 - np.random.randint(1,3)}, {num}]')
-                test.publish('topic/5', f'5"[4, {count}, {65549343+np.random.randint(-100,100)}, {-78 - np.random.randint(1,3)}, {num}]')
+                num = 29 if count <100 else 31
+                test.publish('topic/1', f'1"[4, {count}, {65549343+np.random.randint(-100,200)}, -80,11,50,{num - 5},-1.2]') #rssi, rx diff, std noise, pmr,snr
+                test.publish('topic/2', f'2"[4, {count}, {65549343+np.random.randint(-100,100)}, -80,11,50,{num},-1.2]') #rssi, rx diff, std noise, pmr,snr
+                test.publish('topic/3', f'3"[4, {count}, {65549343+np.random.randint(-100,100)}, -80,11,50,{num},-1.2]') #rssi, rx diff, std noise, pmr,snr
+                test.publish('topic/4', f'4"[4, {count}, {65549343+np.random.randint(-100,100)}, -80,11,50,{num},-1.2]') #rssi, rx diff, std noise, pmr,snr
+                test.publish('topic/5', f'5"[4, {count}, {65549343+np.random.randint(-100,100)}, -80,11,50,{num},-1.2]') #rssi, rx diff, std noise, pmr,snr
                 
                 "data for position"
                 # test.publish('positions', f'[[{np.random.randint(1,5)}, {np.random.randint(1,5)}, {np.random.randint(1,5)}]]')
