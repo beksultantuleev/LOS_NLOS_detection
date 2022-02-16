@@ -15,9 +15,8 @@ from scipy.spatial.distance import cdist
 from scipy.spatial import ConvexHull
 
 
-los_data = pd.read_csv('data/NLOS_added_values_4_ss45000_1.csv')
-# print(los_data)
-los_data['F2_std_noise'] = los_data['std_noise']*10* los_data['F2_std_noise']/1000
-print(los_data)
-# los_data.to_csv("data/NLOS_added_values_4_ss45000_1.csv", index = False)
+lis = np.array([[1,2,3], [4,5,6]])
+print(lis)
+np.random.shuffle(lis)
+print(lis)
 
