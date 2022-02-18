@@ -78,11 +78,11 @@ if __name__ == "__main__":
                 time.sleep(0.1)
                 'raw anchor data'
                 num = 29 if count <100 else 31
-                test.publish('topic/1', f'1"[4, {count}, {65549343+np.random.randint(-100,200)}, -80,11,50,{num - 5},-1.2]') #rssi, rx diff, std noise, pmr,snr
-                test.publish('topic/2', f'2"[4, {count}, {65549343+np.random.randint(-100,100)}, -80,11,50,{num},-1.2]') #rssi, rx diff, std noise, pmr,snr
-                test.publish('topic/3', f'3"[4, {count}, {65549343+np.random.randint(-100,100)}, -80,11,50,{num},-1.2]') #rssi, rx diff, std noise, pmr,snr
-                test.publish('topic/4', f'4"[4, {count}, {65549343+np.random.randint(-100,100)}, -80,11,50,{num},-1.2]') #rssi, rx diff, std noise, pmr,snr
-                test.publish('topic/5', f'5"[4, {count}, {65549343+np.random.randint(-100,100)}, -80,11,50,{num},-1.2]') #rssi, rx diff, std noise, pmr,snr
+                test.publish('topic/1', f'1"[4, {count}, 65553200, -80,11,50,{num - 5},-1.2]') #rssi, rx diff, std noise, pmr,snr
+                test.publish('topic/2', f'2"[4, {count}, 65554200, -80,11,50,{num},-1.2]') #rssi, rx diff, std noise, pmr,snr
+                test.publish('topic/3', f'3"[4, {count}, 65553800, -80,11,50,{num},-1.2]') #rssi, rx diff, std noise, pmr,snr
+                # test.publish('topic/4', f'4"[4, {count}, {65549343+np.random.randint(-100,100)}, -80,11,50,{num},-1.2]') #rssi, rx diff, std noise, pmr,snr
+                # test.publish('topic/5', f'5"[4, {count}, {65549343+np.random.randint(-100,100)}, -80,11,50,{num},-1.2]') #rssi, rx diff, std noise, pmr,snr
                 
                 "data for position"
                 # test.publish('positions', f'[[{np.random.randint(1,5)}, {np.random.randint(1,5)}, {np.random.randint(1,5)}]]')

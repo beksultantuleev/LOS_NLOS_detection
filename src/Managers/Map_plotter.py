@@ -74,10 +74,10 @@ class Plot_manager:
 if __name__ == "__main__":
 
     topic = "positions"
-    anchors = [[2, 2, "1 Black"], [0, 0, "2 Red"],
-                [5, 0, "3 Blue"]]
+    anchors = [[-2, -5, "1 Black"], [5, 2.3, "2 Red"],
+                [-5, 5, "3 Blue"]]
 
-    room_size = [-3, 0, 2, 5]  # x1, y1, x2, y2 # positions -  [0, 0, 7, 10], position [0, 0, 4, 4]
+    room_size = [-5, -5, 5, 5]  # y1,x1, y2, x2 # positions -  [0, 0, 7, 10], position [0, 0, 4, 4]
     
     test = Plot_manager(topic=topic, room_size=room_size, anchor_list=anchors, host="192.168.0.119") #positions position
     test.run()

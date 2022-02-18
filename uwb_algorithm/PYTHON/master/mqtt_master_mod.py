@@ -39,35 +39,33 @@ class ReadLine:
                 self.buf.extend(data)
 
 
-hser = serial.Serial('/dev/serial0', 115200, timeout=None)  # '/dev/ttyACM0' '/dev/serial0'
-rl = ReadLine(hser)
+
 
 topic = f"topic/{id_anch}"
 # topic = "test_localize/dev_01"
 
 
 def on_connect(client, userdata, flags, rc):
-    if rc ==0:
+    if rc == 0:
+
         print("Connected with result code "+str(rc))
+        # print(rl)
+        
+        # client.publish(topic, f"{init}")
 
-        # read DW_INIT ok
-        init = hser.readline().decode("utf")
-
-        # client.publish(topic, str("anch ") + str(id_anch) +
-        #                str(": ") + init, qos=0)
-        # print(f"command {init}")
-
+        # code_0 = hser.readline().decode("utf")
+        # client.publish(topic, f"{code_0}")
         global Connected  # Use global variable
         Connected = True
 
 
 print(f"id of anchor is {id_anch}")
-# hser.write(str(id_anch)+"\n")
+hser = serial.Serial('/dev/ttyACM0', 115200, timeout=None)  # '/dev/ttyACM0'
+rl = ReadLine(hser)
 
-hser.write(b'\n')
-# hser.write(str.encode(f"\n"))
-print(hser.readline().decode("utf"))
+print(hser.readline())
 
+print('after hser')
 Connected = False
 client = mqtt.Client()
 client.on_connect = on_connect
@@ -83,8 +81,8 @@ try:
         try:
             processed_msg = f"{id_anch}{json.dumps(mesg)[:-5]}"
             # print(processed_msg)
-            if len(mesg.split()) < 7:
-                client.publish(topic, processed_msg, qos=0)
+            #if len(mesg.split()) < 7:
+            client.publish(topic, processed_msg, qos=0)
             #     client.publish(topic, str(id_anch) + json.dumps(mesg)[:-5], qos=0)
 
                 # print("published " + str("anch ") +

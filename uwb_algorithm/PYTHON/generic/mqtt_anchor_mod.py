@@ -37,13 +37,12 @@ class ReadLine:
             else:
                 self.buf.extend(data)
 
-
-hser = serial.Serial('/dev/serial0', 115200, timeout=None)  # '/dev/ttyACM0'
+hser = serial.Serial('/dev/ttyACM0', 115200, timeout=None)  # '/dev/ttyACM0'
 rl = ReadLine(hser)
 
 # apre file e ricavo i dati e li printo
 # with open("D:\\UWB\\anch_config.json") as json_file:
-with open("anch_config.json") as json_file:  # "uwb_algorithm/PYTHON/anch_config.json"
+with open("uwb_algorithm/PYTHON/anch_config.json") as json_file:  # "uwb_algorithm/PYTHON/anch_config.json"
     data = json.load(json_file)
     print(data)
     id_anch = data["id"]
@@ -113,8 +112,8 @@ try:
         try:
             processed_msg = f"{id_anch}{json.dumps(mesg)[:-5]}"
             # print(processed_msg)
-            if len(mesg.split()) < 7:
-                client.publish(topic, processed_msg, qos=0)
+            #if len(mesg.split()) < 7:
+            client.publish(topic, processed_msg, qos=0)
             #     client.publish(topic, str(id_anch) + json.dumps(mesg)[:-5], qos=0)
 
                 # print("published " + str("anch ") +

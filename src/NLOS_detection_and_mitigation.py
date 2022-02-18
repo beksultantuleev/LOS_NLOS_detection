@@ -38,7 +38,7 @@ class NLOS_detection_and_Mitigation:
         self.modified_ts = [0]*len(self.anchor_postion_list)
         self.deque_list = [0]*len(self.anchor_postion_list)
         for i in range(len(self.anchor_postion_list)):
-            self.deque_list[i] = Deque_manager(15)
+            self.deque_list[i] = Deque_manager(7)
 
         'anchor filter'
         self.last_know_position = []
@@ -48,6 +48,8 @@ class NLOS_detection_and_Mitigation:
         self.wait_flag = True
         self.pca_model = joblib.load('trained_models/pca.sav')
         self.k_means_model = joblib.load('trained_models/k_means.sav')
+        self.scaler_pca = joblib.load('trained_models/standard_scaler_pca_kmeans.save')
+        
 
         "pca gmm"
         self.gmm_model = joblib.load('trained_models/gmm.sav')
@@ -55,7 +57,7 @@ class NLOS_detection_and_Mitigation:
         "autoencoder"
         self.autoencoder = load_model('trained_models/anomaly_detection_model')
         self.path = 'src/Training/logs/anomaly_detection/logs_Single_data_input.txt'
-        self.threshold = 0.03  # value_extractor("Threshold:", path)
+        self.threshold = value_extractor("Threshold:", self.path)
         self.min_val = value_extractor("Min_val:", self.path)
         self.max_val = value_extractor("Max_val:", self.path)
 
@@ -90,11 +92,13 @@ class NLOS_detection_and_Mitigation:
         raw_anchors_data = np.delete(np.array(self.raw_anchors_data), 2, 1)
         self.vanilla_ts = raw_anchors_data[:, :-(self.number_of_features)]
         input_data = np.array(raw_anchors_data)[:, -(self.number_of_features):]
-        df = self.pca_model.transform(input_data)
+        scaled_data = self.scaler_pca.transform(input_data)
+        df = self.pca_model.transform(scaled_data)
         if k_means:
             self.pred_from_detection = self.k_means_model.predict(df)
         else:
             self.pred_from_detection = self.gmm_model.predict(df)
+
         self.processed_anchors_data = np.c_[
             raw_anchors_data[:, :-(self.number_of_features)], self.pred_from_detection]
         if not self.data_collection_complete:
@@ -291,11 +295,11 @@ class NLOS_detection_and_Mitigation:
 
     def publish(self):
         'first is filtered and second is original'
-        ts_with_pred = self.std_ts_filter()
-        # ts_with_pred = test.simple_timestamp_filter()
-        # print(self.vanilla_ts[:,1:])
+        ts_with_pred = test.simple_timestamp_filter(median=True)
+        # ts_with_pred = test.std_ts_filter(median=True)
         filtered = test.get_position(
             (ts_with_pred[:, 1:], anchors_pos), in_2d=True)
+        # filtered = test.improved_anchor_selection_filter(ts_with_pred, in_2d=True)
         original = test.get_position(
             (self.vanilla_ts[:, 1:], anchors_pos), in_2d=True)
         # print(filtered)
@@ -389,39 +393,34 @@ class NLOS_detection_and_Mitigation:
 
 if __name__ == "__main__":
 
-    A_n1 = np.array([[2], [2], [0.9]])
-    A_n2 = np.array([[0], [0], [0.5]])
-    A_n3 = np.array([[5], [0], [1.8]])  # master
-    A_n4 = np.array([[3], [5], [1]])  # master
-    A_n5 = np.array([[2], [5], [4]])  # master
-    anchors_pos = np.array([A_n1, A_n2, A_n3, A_n4, A_n5])
-    # anchors_pos = np.array([A_n1, A_n2, A_n3])
+    A_n1 = np.array([[2], [0], [1]]) 
+    A_n2 = np.array([[5], [2.3], [1]])
+    A_n3 = np.array([[0], [3], [1]])  #master
+    # A_n4 = np.array([[3], [5], [1]]) 
+    # A_n5 = np.array([[2], [5], [4]])  
+    # anchors_pos = np.array([A_n1, A_n2, A_n3, A_n4, A_n5])
+    anchors_pos = np.array([A_n1, A_n2, A_n3])
     # print(A_n1.shape)
     test = NLOS_detection_and_Mitigation(anchor_postion_list=anchors_pos)
     while True:
         'testing'
-        time.sleep(0.4)
-        test.anomaly_detection()
-        # test.pca_k_means_model_or_gmm(k_means=False)
-        # print(test.pred_from_detection)
-
-        ts_with_pred = test.simple_timestamp_filter(median=True)
-        # print(ts_with_pred)
-        # ts_with_pred = test.smart_timestamp_filter()
-        # # print(ts_with_pred)
-        # # pos = test.get_position(
-        # #     (ts_with_pred[:, 1:], anchors_pos), in_2d=True)
+        time.sleep(0.1)
+        # test.anomaly_detection()
+        test.pca_k_means_model_or_gmm(k_means=True)
+        test.publish()
+        # print(test.vanilla_ts)
+        # ts_with_pred = test.std_ts_filter()
+        # ts_with_pred = test.simple_timestamp_filter()
+        # pos = test.get_position(
+        #     (test.vanilla_ts[:, 1:], anchors_pos), in_2d=True)
         # pos = test.smart_anchor_selection_filter(
         #     ts_with_pred, in_2d=True)
-        # pos = test.simple_anchor_selection_filter(ts_with_pred, in_2d=False)
-        pos = test.improved_anchor_selection_filter(ts_with_pred)
 
-        print(pos)
+        # print(pos)
         
 
         'with grand model'
         # time.sleep(0.1)
-        # # test.anomaly_detection()
         # test.anomaly_detection()
         # test.publish()
 
