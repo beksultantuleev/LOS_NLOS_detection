@@ -38,7 +38,7 @@ class NLOS_detection_and_Mitigation:
         self.modified_ts = [0]*len(self.anchor_postion_list)
         self.deque_list = [0]*len(self.anchor_postion_list)
         for i in range(len(self.anchor_postion_list)):
-            self.deque_list[i] = Deque_manager(7)
+            self.deque_list[i] = Deque_manager(9)
 
         'anchor filter'
         self.last_know_position = []
@@ -71,6 +71,10 @@ class NLOS_detection_and_Mitigation:
         self.data_size = 100
         self.final_data = None
         self.data_collection_complete = False
+
+        "filtered vs original data"
+        self.filtered_data = np.empty(shape=(0, 2))
+        self.original_data = np.empty(shape=(0, 2))
 
     def on_message(self, client, userdata, message):
         msg = f'{message.payload.decode("utf")}'
@@ -297,21 +301,31 @@ class NLOS_detection_and_Mitigation:
         'first is filtered and second is original'
         ts_with_pred = test.simple_timestamp_filter(median=True)
         # ts_with_pred = test.std_ts_filter(median=True)
-        filtered = test.get_position(
-            (ts_with_pred[:, 1:], anchors_pos), in_2d=True)
+        # filtered = test.get_position(
+        #     (ts_with_pred[:, 1:], self.anchor_postion_list), in_2d=True)
         # filtered = test.improved_anchor_selection_filter(ts_with_pred, in_2d=True)
+        filtered = test.simple_anchor_selection_filter(ts_with_pred, in_2d=True)
         original = test.get_position(
-            (self.vanilla_ts[:, 1:], anchors_pos), in_2d=True)
+            (self.vanilla_ts[:, 1:], self.anchor_postion_list), in_2d=True)
         # print(filtered)
         # print(original)
         payload_ = f'[{filtered[0]}, {original[0]}]'
-        # {np.concatenate([self.pred_from_detection, self.pred_from_mitigation], axis=0)}
+        'save data '
+        self.filtered_data = np.append(self.filtered_data, np.expand_dims(
+                filtered[0], axis=0), axis=0)
+        self.original_data = np.append(self.original_data, np.expand_dims(
+                original[0], axis=0), axis=0)
+        if len(self.original_data) == self.data_size:
+            comparison_data = np.append(
+                self.filtered_data, self.original_data, axis=1)
+            filename = f"comparison_data_{self.data_size}.csv"
+            np.savetxt(filename, comparison_data, delimiter=",")
+            print(f'data saved! shape is>>>>>>>>>>>> {comparison_data.shape}')
+
         self.client.publish('positions', payload_)
         print(
             f'filt {filtered[0]} \t {np.concatenate([self.pred_from_detection, self.pred_from_mitigation], axis=0)} {self.pred_from_grand_model}')  # {self.pred_from_grand_model}
-        # print(
-        #     f'1 filtered {np.array(self.raw_anchors_data)} \t  {self.pred_from_detection}')
-        # print(f'2 original {original}')
+
 
     def get_selected_anchors(self, los_anchors, nlos_anchors, A_n, coordinates, nlos_id, set_threshold=1.5):
         if len(nlos_anchors) != 0:
