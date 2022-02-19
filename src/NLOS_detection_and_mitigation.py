@@ -1,3 +1,4 @@
+from logging import exception
 import paho.mqtt.client as mqtt
 import numpy as np
 import json
@@ -38,7 +39,7 @@ class NLOS_detection_and_Mitigation:
         self.modified_ts = [0]*len(self.anchor_postion_list)
         self.deque_list = [0]*len(self.anchor_postion_list)
         for i in range(len(self.anchor_postion_list)):
-            self.deque_list[i] = Deque_manager(9)
+            self.deque_list[i] = Deque_manager(16)  # 16
 
         'anchor filter'
         self.last_know_position = []
@@ -48,8 +49,8 @@ class NLOS_detection_and_Mitigation:
         self.wait_flag = True
         self.pca_model = joblib.load('trained_models/pca.sav')
         self.k_means_model = joblib.load('trained_models/k_means.sav')
-        self.scaler_pca = joblib.load('trained_models/standard_scaler_pca_kmeans.save')
-        
+        self.scaler_pca = joblib.load(
+            'trained_models/standard_scaler_pca_kmeans.save')
 
         "pca gmm"
         self.gmm_model = joblib.load('trained_models/gmm.sav')
@@ -57,7 +58,8 @@ class NLOS_detection_and_Mitigation:
         "autoencoder"
         self.autoencoder = load_model('trained_models/anomaly_detection_model')
         self.path = 'src/Training/logs/anomaly_detection/logs_Single_data_input.txt'
-        self.threshold = value_extractor("Threshold:", self.path)
+        # value_extractor("Threshold:", self.path) #0.004575138445943594
+        self.threshold = 0.01
         self.min_val = value_extractor("Min_val:", self.path)
         self.max_val = value_extractor("Max_val:", self.path)
 
@@ -75,6 +77,9 @@ class NLOS_detection_and_Mitigation:
         "filtered vs original data"
         self.filtered_data = np.empty(shape=(0, 2))
         self.original_data = np.empty(shape=(0, 2))
+        self.detection_name = ''
+        self.filter_name = ''
+        self.anchor_selection_name = ''
 
     def on_message(self, client, userdata, message):
         msg = f'{message.payload.decode("utf")}'
@@ -89,6 +94,9 @@ class NLOS_detection_and_Mitigation:
                     'you can put "i" in "res" to have anchor identification'
                     self.raw_anchors_data[i-1] = [i] + res
 
+    def set_data_size(self, size):
+        self.data_size = size
+
     def pca_k_means_model_or_gmm(self, k_means=True):
         if self.wait_flag:
             time.sleep(0.9)
@@ -100,8 +108,10 @@ class NLOS_detection_and_Mitigation:
         df = self.pca_model.transform(scaled_data)
         if k_means:
             self.pred_from_detection = self.k_means_model.predict(df)
+            self.detection_name = '_k_means'
         else:
             self.pred_from_detection = self.gmm_model.predict(df)
+            self.detection_name = '_gmm'
 
         self.processed_anchors_data = np.c_[
             raw_anchors_data[:, :-(self.number_of_features)], self.pred_from_detection]
@@ -109,12 +119,11 @@ class NLOS_detection_and_Mitigation:
             self.data_detection = np.append(self.data_detection, np.expand_dims(
                 self.pred_from_detection, axis=0), axis=0)
 
-
     def anomaly_detection(self):
         if self.wait_flag:
             time.sleep(0.9)
             self.wait_flag = False
-
+        self.detection_name = '_anomaly'
         raw_anchors_data = np.delete(np.array(self.raw_anchors_data), 2, 1)
         self.vanilla_ts = raw_anchors_data[:, :-(self.number_of_features)]
         raw_data = np.array(raw_anchors_data)[:, -(self.number_of_features):]
@@ -129,7 +138,9 @@ class NLOS_detection_and_Mitigation:
                 self.pred_from_detection, axis=0), axis=0)
 
     def simple_timestamp_filter(self, los=1, median=True):
-        'update done'
+        self.filter_name = '_simple_filter_avrg'
+        if median:
+            self.filter_name = '_simple_filter_median'
         counter = 0
         # print(self.processed_anchors_data)
         for t in self.processed_anchors_data:
@@ -137,18 +148,23 @@ class NLOS_detection_and_Mitigation:
                 self.deque_list[counter].append_data(t[2])
                 'try to put median'
                 self.modified_ts[counter] = [
-                    t[0], t[1], self.deque_list[counter].get_median(), t[3]]  # put half array arvg
+                    t[0], t[1], self.deque_list[counter].get_fraction_array_median(), t[3]]  # put half array arvg
             else:
                 'try to test with median value instead of mean'
                 if median:
                     self.modified_ts[counter] = [
-                        t[0], t[1], self.deque_list[counter].get_median(), t[3]]
-                self.modified_ts[counter] = [
-                    t[0], t[1], self.deque_list[counter].get_avrg(), t[3]]
+                        t[0], t[1], self.deque_list[counter].get_fraction_array_median(), t[3]]
+                else:
+                    self.modified_ts[counter] = [
+                        t[0], t[1], self.deque_list[counter].get_fraction_array_avrg(), t[3]]
             counter += 1
         return np.array(self.modified_ts)
 
     def std_ts_filter(self, los=1, median=True):
+        self.filter_name = '_std_fltr_avrg'
+        if median:
+            self.filter_name = '_std_fltr_median'
+
         counter = 0
         for t in self.processed_anchors_data:
             'get right std and avrgs'
@@ -159,18 +175,16 @@ class NLOS_detection_and_Mitigation:
                 'prediction of mitigation'
                 self.pred_from_mitigation[counter] = 1
                 if t[-1] == los:
-                    # self.modified_ts[counter] = [t[0], t[1], t[2]]
                     self.modified_ts[counter] = [
-                        t[0], t[1], self.deque_list[counter].get_median(), t[3]]  # put half array avrg
-                # else:
-                #     self.modified_ts[counter] = [t[0], self.deque_list[counter].get_last_value(), t[2]]
+                        t[0], t[1], self.deque_list[counter].get_fraction_array_median(), t[3]]  # put half array avrg
             else:
                 self.pred_from_mitigation[counter] = 0
                 if median:
                     self.modified_ts[counter] = [
-                        t[0], t[1], self.deque_list[counter].get_median(), t[3]]
-                self.modified_ts[counter] = [
-                    t[0], t[1], self.deque_list[counter].get_avrg(), t[3]]  # put avrg timestamp
+                        t[0], t[1], self.deque_list[counter].get_fraction_array_median(), t[3]]
+                else:
+                    self.modified_ts[counter] = [
+                        t[0], t[1], self.deque_list[counter].get_fraction_array_avrg(), t[3]]  # put avrg timestamp
 
             counter += 1
 
@@ -281,6 +295,7 @@ class NLOS_detection_and_Mitigation:
         return los_anchors, nlos_anchors
 
     def simple_anchor_selection_filter(self, ts_with_los_prediction, los=1, in_2d=False):
+        self.anchor_selection_name = '_smpl_anch_sel'
         number_of_anchors_for_pos_estimation = 3
         A_n = self.anchor_postion_list
         los_anchors, nlos_anchors = self.los_nlos_divider(
@@ -297,37 +312,7 @@ class NLOS_detection_and_Mitigation:
 
         return self.get_position(ts_with_A_n, in_2d)
 
-    def publish(self):
-        'first is filtered and second is original'
-        ts_with_pred = test.simple_timestamp_filter(median=True)
-        # ts_with_pred = test.std_ts_filter(median=True)
-        # filtered = test.get_position(
-        #     (ts_with_pred[:, 1:], self.anchor_postion_list), in_2d=True)
-        # filtered = test.improved_anchor_selection_filter(ts_with_pred, in_2d=True)
-        filtered = test.simple_anchor_selection_filter(ts_with_pred, in_2d=True)
-        original = test.get_position(
-            (self.vanilla_ts[:, 1:], self.anchor_postion_list), in_2d=True)
-        # print(filtered)
-        # print(original)
-        payload_ = f'[{filtered[0]}, {original[0]}]'
-        'save data '
-        self.filtered_data = np.append(self.filtered_data, np.expand_dims(
-                filtered[0], axis=0), axis=0)
-        self.original_data = np.append(self.original_data, np.expand_dims(
-                original[0], axis=0), axis=0)
-        if len(self.original_data) == self.data_size:
-            comparison_data = np.append(
-                self.filtered_data, self.original_data, axis=1)
-            filename = f"comparison_data_{self.data_size}.csv"
-            np.savetxt(filename, comparison_data, delimiter=",")
-            print(f'data saved! shape is>>>>>>>>>>>> {comparison_data.shape}')
-
-        self.client.publish('positions', payload_)
-        print(
-            f'filt {filtered[0]} \t {np.concatenate([self.pred_from_detection, self.pred_from_mitigation], axis=0)} {self.pred_from_grand_model}')  # {self.pred_from_grand_model}
-
-
-    def get_selected_anchors(self, los_anchors, nlos_anchors, A_n, coordinates, nlos_id, set_threshold=1.5):
+    def get_selected_anchors(self, los_anchors, nlos_anchors, A_n, coordinates, nlos_id, set_threshold=0.5):
         if len(nlos_anchors) != 0:
             if len(los_anchors) < 2:
                 nlos_anchors = np.concatenate(
@@ -362,6 +347,7 @@ class NLOS_detection_and_Mitigation:
         return los_anchors
 
     def improved_anchor_selection_filter(self, ts_with_los_prediction, los=1, in_2d=False):
+        self.anchor_selection_name = '_imp_anch_sel'
         A_n = self.anchor_postion_list
         los_anchors, nlos_anchors = self.los_nlos_divider(
             ts_with_los_prediction)
@@ -372,14 +358,15 @@ class NLOS_detection_and_Mitigation:
             'calculate first true position'
             coordinates[0] = self.get_position(ts_with_An_los, in_2d=True)[0]
             los_anchors = self.get_selected_anchors(
-                los_anchors, nlos_anchors, A_n, coordinates, nlos_id, set_threshold=1)
+                los_anchors, nlos_anchors, A_n, coordinates, nlos_id, set_threshold=0.5)
 
             ts_with_An_los = get_ts_with_An(los_anchors, A_n)
             estimated_position = self.get_position(ts_with_An_los, in_2d=in_2d)
             'last know pos update'
             # self.last_know_position = estimated_position[0][:-1] if not in_2d else estimated_position[0]
-            
-            last_pos_data = estimated_position[0][:-1] if not in_2d else estimated_position[0]
+
+            last_pos_data = estimated_position[0][:-
+                                                  1] if not in_2d else estimated_position[0]
             self.last_know_pos_object.append_data(last_pos_data)
             self.last_know_position = self.last_know_pos_object.get_median()
             return estimated_position
@@ -392,36 +379,79 @@ class NLOS_detection_and_Mitigation:
                     (ts_with_los_prediction[:, 1:], A_n), in_2d=True)[0]
 
             los_anchors = self.get_selected_anchors(
-                los_anchors, nlos_anchors, A_n, coordinates, nlos_id, set_threshold=1)
+                los_anchors, nlos_anchors, A_n, coordinates, nlos_id, set_threshold=0.5)
             ts_with_An_los = get_ts_with_An(los_anchors, A_n)
             estimated_position = self.get_position(ts_with_An_los, in_2d=in_2d)
             'update last known pos data'
             # self.last_know_position = estimated_position[0][:-1] if not in_2d else estimated_position[0]
-            
-            last_pos_data = estimated_position[0][:-1] if not in_2d else estimated_position[0]
+
+            last_pos_data = estimated_position[0][:-
+                                                  1] if not in_2d else estimated_position[0]
             self.last_know_pos_object.append_data(last_pos_data)
             self.last_know_position = self.last_know_pos_object.get_median()
 
             return estimated_position
 
+    def publish(self, save_data=False, still=True, median=True):
+        'first is filtered and second is original'
+        # ts_with_pred = test.simple_timestamp_filter(median=median)
+        ts_with_pred = test.std_ts_filter(median=median)
+        # filtered = test.get_position(
+        #     (ts_with_pred[:, 1:], self.anchor_postion_list), in_2d=True)
+        filtered = test.improved_anchor_selection_filter(
+            ts_with_pred, in_2d=True)
+        # filtered = test.simple_anchor_selection_filter(
+        #     ts_with_pred, in_2d=True)
+        original = test.get_position(
+            (self.vanilla_ts[:, 1:], self.anchor_postion_list), in_2d=True)
+        # print(filtered)
+        # print(original)
+        payload_ = f'[{filtered[0]}, {original[0]}]'
+        'save data '
+        if save_data:
+
+            self.filtered_data = np.append(self.filtered_data, np.expand_dims(
+                filtered[0], axis=0), axis=0)
+            self.original_data = np.append(self.original_data, np.expand_dims(
+                original[0], axis=0), axis=0)
+            if len(self.original_data) == self.data_size:
+                comparison_data = np.append(
+                    self.filtered_data, self.original_data, axis=1)
+                still_name = 'still'
+                if not still:
+                    still_name = 'move'
+                filename = f"data/filtered_vs_original_data/{still_name}_comp{self.detection_name+self.filter_name+self.anchor_selection_name}_{self.data_size}.csv"
+                np.savetxt(filename, comparison_data, delimiter=",")
+                print(
+                    f'data saved! shape is>>>>>>>>>>>> {comparison_data.shape}')
+                raise exception('done')
+
+        self.client.publish('positions', payload_)
+        print(
+            f'filt {filtered[0]} \t {np.concatenate([self.pred_from_detection, self.pred_from_mitigation], axis=0)} {self.pred_from_grand_model}')  # {self.pred_from_grand_model}
+
 
 if __name__ == "__main__":
 
-    A_n1 = np.array([[2], [0], [1]]) 
+    A_n1 = np.array([[2], [0], [1]])
     A_n2 = np.array([[5], [2.3], [1]])
-    A_n3 = np.array([[0], [3], [1]])  #master
-    # A_n4 = np.array([[3], [5], [1]]) 
-    # A_n5 = np.array([[2], [5], [4]])  
+    A_n3 = np.array([[0], [3], [1]])  # master
+    # A_n4 = np.array([[3], [5], [1]])
+    # A_n5 = np.array([[2], [5], [4]])
     # anchors_pos = np.array([A_n1, A_n2, A_n3, A_n4, A_n5])
     anchors_pos = np.array([A_n1, A_n2, A_n3])
     # print(A_n1.shape)
     test = NLOS_detection_and_Mitigation(anchor_postion_list=anchors_pos)
+    test.set_data_size(300)
     while True:
         'testing'
         time.sleep(0.1)
         # test.anomaly_detection()
-        test.pca_k_means_model_or_gmm(k_means=True)
-        test.publish()
+        test.pca_k_means_model_or_gmm(k_means=False)
+        test.publish(save_data=True, still=False, median=True)
+        '''notes for me: find good threshold for anomaly, too much nlos detection leads for erros
+        because we r putting median/avrg value'''
+        # print(test.threshold)
         # print(test.vanilla_ts)
         # ts_with_pred = test.std_ts_filter()
         # ts_with_pred = test.simple_timestamp_filter()
@@ -431,7 +461,6 @@ if __name__ == "__main__":
         #     ts_with_pred, in_2d=True)
 
         # print(pos)
-        
 
         'with grand model'
         # time.sleep(0.1)

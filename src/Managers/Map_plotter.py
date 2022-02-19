@@ -74,8 +74,8 @@ class Plot_manager:
 if __name__ == "__main__":
 
     topic = "positions"
-    anchors = [[-2, -5, "1 Black"], [5, 2.3, "2 Red"],
-                [-5, 5, "3 Blue"]]
+    anchors = [[2, 0, "1 Black"], [5, 2.3, "2 Red"],
+                [0, 3, "3 Blue"]]
 
     room_size = [-5, -5, 5, 5]  # y1,x1, y2, x2 # positions -  [0, 0, 7, 10], position [0, 0, 4, 4]
     
