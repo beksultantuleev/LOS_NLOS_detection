@@ -39,7 +39,7 @@ class NLOS_detection_and_Mitigation:
         self.modified_ts = [0]*len(self.anchor_postion_list)
         self.deque_list = [0]*len(self.anchor_postion_list)
         for i in range(len(self.anchor_postion_list)):
-            self.deque_list[i] = Deque_manager(16)  # 16
+            self.deque_list[i] = Deque_manager(8, divider_percentage=0.5)
 
         'anchor filter'
         self.last_know_position = []
@@ -146,21 +146,18 @@ class NLOS_detection_and_Mitigation:
         for t in self.processed_anchors_data:
             if t[-1] == los:  # LOS
                 self.deque_list[counter].append_data(t[2])
-                'try to put median'
+            'try to test with median value instead of mean'
+            if median:
                 self.modified_ts[counter] = [
-                    t[0], t[1], self.deque_list[counter].get_fraction_array_median(), t[3]]  # put half array arvg
+                    t[0], t[1], self.deque_list[counter].get_median(), t[3]] #get_fraction_array_median()
             else:
-                'try to test with median value instead of mean'
-                if median:
-                    self.modified_ts[counter] = [
-                        t[0], t[1], self.deque_list[counter].get_fraction_array_median(), t[3]]
-                else:
-                    self.modified_ts[counter] = [
-                        t[0], t[1], self.deque_list[counter].get_fraction_array_avrg(), t[3]]
+                self.modified_ts[counter] = [
+                    t[0], t[1], self.deque_list[counter].get_avrg(), t[3]] #get_fraction_array_avrg()
             counter += 1
         return np.array(self.modified_ts)
 
     def std_ts_filter(self, los=1, median=True):
+        'test this logic'
         self.filter_name = '_std_fltr_avrg'
         if median:
             self.filter_name = '_std_fltr_median'
@@ -170,22 +167,24 @@ class NLOS_detection_and_Mitigation:
             'get right std and avrgs'
             if t[-1] == los:  # LOS
                 self.deque_list[counter].append_data(t[2])
+
             'apply those stds and avrgs'
             if t[2] > self.deque_list[counter].get_avrg()-self.deque_list[counter].get_std() and t[2] < self.deque_list[counter].get_avrg()+self.deque_list[counter].get_std():
                 'prediction of mitigation'
                 self.pred_from_mitigation[counter] = 1
-                if t[-1] == los:
-                    self.modified_ts[counter] = [
-                        t[0], t[1], self.deque_list[counter].get_fraction_array_median(), t[3]]  # put half array avrg
-            else:
-                self.pred_from_mitigation[counter] = 0
                 if median:
                     self.modified_ts[counter] = [
                         t[0], t[1], self.deque_list[counter].get_fraction_array_median(), t[3]]
                 else:
                     self.modified_ts[counter] = [
-                        t[0], t[1], self.deque_list[counter].get_fraction_array_avrg(), t[3]]  # put avrg timestamp
+                        t[0], t[1], self.deque_list[counter].get_fraction_array_avrg(), t[3]]
 
+            self.pred_from_mitigation[counter] = 0
+            self.modified_ts[counter] = [
+                t[0], t[1], self.deque_list[counter].get_avrg(), t[3]]  # put avrg timestamp
+            if median:
+                self.modified_ts[counter] = [
+                    t[0], t[1], self.deque_list[counter].get_median(), t[3]]
             counter += 1
 
         if not self.data_collection_complete:
@@ -392,16 +391,16 @@ class NLOS_detection_and_Mitigation:
 
             return estimated_position
 
-    def publish(self, save_data=False, still=True, median=True):
+    def publish(self, save_data=False, still=True, median=True, moving_tag=True):
         'first is filtered and second is original'
         # ts_with_pred = test.simple_timestamp_filter(median=median)
         ts_with_pred = test.std_ts_filter(median=median)
         # filtered = test.get_position(
         #     (ts_with_pred[:, 1:], self.anchor_postion_list), in_2d=True)
-        filtered = test.improved_anchor_selection_filter(
-            ts_with_pred, in_2d=True)
-        # filtered = test.simple_anchor_selection_filter(
+        # filtered = test.improved_anchor_selection_filter(
         #     ts_with_pred, in_2d=True)
+        filtered = test.simple_anchor_selection_filter(
+            ts_with_pred, in_2d=True)
         original = test.get_position(
             (self.vanilla_ts[:, 1:], self.anchor_postion_list), in_2d=True)
         # print(filtered)
@@ -420,7 +419,9 @@ class NLOS_detection_and_Mitigation:
                 still_name = 'still'
                 if not still:
                     still_name = 'move'
-                filename = f"data/filtered_vs_original_data/{still_name}_comp{self.detection_name+self.filter_name+self.anchor_selection_name}_{self.data_size}.csv"
+                if moving_tag:
+                    moving_name = 'moving_tag_'
+                filename = f"data/filtered_vs_original_data/{moving_name}{still_name}_comp{self.detection_name+self.filter_name+self.anchor_selection_name}_{self.data_size}.csv"
                 np.savetxt(filename, comparison_data, delimiter=",")
                 print(
                     f'data saved! shape is>>>>>>>>>>>> {comparison_data.shape}')
@@ -442,13 +443,13 @@ if __name__ == "__main__":
     anchors_pos = np.array([A_n1, A_n2, A_n3])
     # print(A_n1.shape)
     test = NLOS_detection_and_Mitigation(anchor_postion_list=anchors_pos)
-    test.set_data_size(300)
+    test.set_data_size(200)
     while True:
         'testing'
         time.sleep(0.1)
         # test.anomaly_detection()
         test.pca_k_means_model_or_gmm(k_means=False)
-        test.publish(save_data=True, still=False, median=True)
+        test.publish(save_data=True, still=True, median=True, moving_tag=True)
         '''notes for me: find good threshold for anomaly, too much nlos detection leads for erros
         because we r putting median/avrg value'''
         # print(test.threshold)
