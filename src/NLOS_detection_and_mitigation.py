@@ -146,13 +146,19 @@ class NLOS_detection_and_Mitigation:
         for t in self.processed_anchors_data:
             if t[-1] == los:  # LOS
                 self.deque_list[counter].append_data(t[2])
+                if median:
+                    self.modified_ts[counter] = [
+                        t[0], t[1], self.deque_list[counter].get_fraction_array_median(), t[3]]
+                else:
+                    self.modified_ts[counter] = [
+                        t[0], t[1], self.deque_list[counter].get_fraction_array_avrg(), t[3]]
             'try to test with median value instead of mean'
             if median:
                 self.modified_ts[counter] = [
-                    t[0], t[1], self.deque_list[counter].get_median(), t[3]] #get_fraction_array_median()
+                    t[0], t[1], self.deque_list[counter].get_median(), t[3]]  # get_fraction_array_median()
             else:
                 self.modified_ts[counter] = [
-                    t[0], t[1], self.deque_list[counter].get_avrg(), t[3]] #get_fraction_array_avrg()
+                    t[0], t[1], self.deque_list[counter].get_avrg(), t[3]]  # get_fraction_array_avrg()
             counter += 1
         return np.array(self.modified_ts)
 
