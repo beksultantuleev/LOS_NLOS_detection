@@ -39,11 +39,13 @@ class NLOS_detection_and_Mitigation:
         self.modified_ts = [0]*len(self.anchor_postion_list)
         self.deque_list = [0]*len(self.anchor_postion_list)
         for i in range(len(self.anchor_postion_list)):
-            self.deque_list[i] = Deque_manager(8, divider_percentage=0.5)
+            self.deque_list[i] = Deque_manager(
+                8, divider_percentage=0.5)
 
         'anchor filter'
         self.last_know_position = []
         self.last_know_pos_object = Deque_manager(3)
+        self.set_threshold = 0.3
 
         "pca k means"
         self.wait_flag = True
@@ -67,12 +69,13 @@ class NLOS_detection_and_Mitigation:
         self.grand_model = None
         self.data_mitigation = np.empty(shape=(0, self.amount_of_anchors))
         self.data_detection = np.empty(shape=(0, self.amount_of_anchors))
-        self.pred_from_mitigation = [0]*self.amount_of_anchors
-        self.pred_from_grand_model = None
+        self.pred_from_mitigation = [1]*self.amount_of_anchors
+        self.pred_from_grand_model = []
         self.pred_from_detection = None
         self.data_size = 100
         self.final_data = None
         self.data_collection_complete = False
+        self.grand_model_data = np.empty(shape=(0, 9))
 
         "filtered vs original data"
         self.filtered_data = np.empty(shape=(0, 2))
@@ -142,7 +145,6 @@ class NLOS_detection_and_Mitigation:
         if median:
             self.filter_name = '_simple_filter_median'
         counter = 0
-        # print(self.processed_anchors_data)
         for t in self.processed_anchors_data:
             if t[-1] == los:  # LOS
                 self.deque_list[counter].append_data(t[2])
@@ -152,13 +154,14 @@ class NLOS_detection_and_Mitigation:
                 else:
                     self.modified_ts[counter] = [
                         t[0], t[1], self.deque_list[counter].get_fraction_array_avrg(), t[3]]
-            'try to test with median value instead of mean'
-            if median:
-                self.modified_ts[counter] = [
-                    t[0], t[1], self.deque_list[counter].get_median(), t[3]]  # get_fraction_array_median()
             else:
-                self.modified_ts[counter] = [
-                    t[0], t[1], self.deque_list[counter].get_avrg(), t[3]]  # get_fraction_array_avrg()
+                'try to test with median value instead of mean'
+                if median:
+                    self.modified_ts[counter] = [
+                        t[0], t[1], self.deque_list[counter].get_median(), t[3]]  # get_fraction_array_median()
+                else:
+                    self.modified_ts[counter] = [
+                        t[0], t[1], self.deque_list[counter].get_avrg(), t[3]]  # get_fraction_array_avrg()
             counter += 1
         return np.array(self.modified_ts)
 
@@ -173,9 +176,15 @@ class NLOS_detection_and_Mitigation:
             'get right std and avrgs'
             if t[-1] == los:  # LOS
                 self.deque_list[counter].append_data(t[2])
-
             'apply those stds and avrgs'
-            if t[2] > self.deque_list[counter].get_avrg()-self.deque_list[counter].get_std() and t[2] < self.deque_list[counter].get_avrg()+self.deque_list[counter].get_std():
+            minimum_value = self.deque_list[counter].get_avrg(
+            )-self.deque_list[counter].get_std()
+            maximum_value = self.deque_list[counter].get_avrg(
+            )+self.deque_list[counter].get_std()
+            # print(
+            #     f'Anch>{counter}, TS> {t[2]}, min> {minimum_value:.2f}, max> {maximum_value:.2f}  std > {self.deque_list[counter].get_std():.2f} \t {self.pred_from_mitigation}')
+
+            if t[2] > minimum_value and t[2] < maximum_value:
                 'prediction of mitigation'
                 self.pred_from_mitigation[counter] = 1
                 if median:
@@ -184,13 +193,15 @@ class NLOS_detection_and_Mitigation:
                 else:
                     self.modified_ts[counter] = [
                         t[0], t[1], self.deque_list[counter].get_fraction_array_avrg(), t[3]]
+            else:
+                self.pred_from_mitigation[counter] = 0
 
-            self.pred_from_mitigation[counter] = 0
-            self.modified_ts[counter] = [
-                t[0], t[1], self.deque_list[counter].get_avrg(), t[3]]  # put avrg timestamp
-            if median:
-                self.modified_ts[counter] = [
-                    t[0], t[1], self.deque_list[counter].get_median(), t[3]]
+                if median:
+                    self.modified_ts[counter] = [
+                        t[0], t[1], self.deque_list[counter].get_median(), t[3]]
+                else:
+                    self.modified_ts[counter] = [
+                        t[0], t[1], self.deque_list[counter].get_avrg(), t[3]]  # put avrg timestamp
             counter += 1
 
         if not self.data_collection_complete:
@@ -323,7 +334,6 @@ class NLOS_detection_and_Mitigation:
                 nlos_anchors = np.concatenate(
                     [los_anchors, nlos_anchors], axis=0)
                 los_anchors = nlos_anchors[:2, :]
-
                 for nlos_anch in nlos_anchors[2:, :]:
                     nlos_id.append(nlos_anch[0])
                     los_anchors = np.append(los_anchors, np.expand_dims(
@@ -363,7 +373,7 @@ class NLOS_detection_and_Mitigation:
             'calculate first true position'
             coordinates[0] = self.get_position(ts_with_An_los, in_2d=True)[0]
             los_anchors = self.get_selected_anchors(
-                los_anchors, nlos_anchors, A_n, coordinates, nlos_id, set_threshold=0.5)
+                los_anchors, nlos_anchors, A_n, coordinates, nlos_id, set_threshold=self.set_threshold)
 
             ts_with_An_los = get_ts_with_An(los_anchors, A_n)
             estimated_position = self.get_position(ts_with_An_los, in_2d=in_2d)
@@ -434,9 +444,24 @@ class NLOS_detection_and_Mitigation:
                 raise exception('done')
 
         self.client.publish('positions', payload_)
-        print(
-            f'filt {filtered[0]} \t {np.concatenate([self.pred_from_detection, self.pred_from_mitigation], axis=0)} {self.pred_from_grand_model}')  # {self.pred_from_grand_model}
+        if len(self.pred_from_grand_model)!= 0:
+            det_mitig_data_grand_model = np.concatenate([self.pred_from_detection, self.pred_from_mitigation, self.pred_from_grand_model[0]], axis=0)
+            
+            self.grand_model_data = np.append(self.grand_model_data, np.expand_dims(
+                det_mitig_data_grand_model, axis=0), axis=0)
+            print(
+                f'filt {filtered[0]} shape is {self.grand_model_data.shape} \t\t {det_mitig_data_grand_model}')  # {self.pred_from_grand_model}
+            if len(self.grand_model_data) == self.data_size:
+                columns_ = ['det1', 'det2', 'det3', 'mit1', 'mit2', 'mit3', 'grand1', 'grand2', 'grand3']
+                
+                grand_model_test = pd.DataFrame(self.grand_model_data, columns=columns_)
+                grand_model_test.to_csv('grand_model_test_data_all_anchors.csv', index=False)
+                print(
+                    f'data saved! shape is>>>>>>>>>>>> {self.grand_model_data.shape}')
+                raise exception('done')
 
+        else:
+            print(f'grand model is training! {np.concatenate([self.pred_from_detection, self.pred_from_mitigation], axis=0)}')
 
 if __name__ == "__main__":
 
@@ -449,13 +474,14 @@ if __name__ == "__main__":
     anchors_pos = np.array([A_n1, A_n2, A_n3])
     # print(A_n1.shape)
     test = NLOS_detection_and_Mitigation(anchor_postion_list=anchors_pos)
-    test.set_data_size(200)
+    test.set_data_size(200)#200
     while True:
         'testing'
-        time.sleep(0.1)
+        time.sleep(0.2)
         # test.anomaly_detection()
         test.pca_k_means_model_or_gmm(k_means=False)
-        test.publish(save_data=True, still=True, median=True, moving_tag=True)
+        test.publish(save_data=False, still=True,
+                     median=True, moving_tag=False)
         '''notes for me: find good threshold for anomaly, too much nlos detection leads for erros
         because we r putting median/avrg value'''
         # print(test.threshold)
