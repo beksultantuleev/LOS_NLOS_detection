@@ -407,17 +407,43 @@ class NLOS_detection_and_Mitigation:
 
             return estimated_position
 
+    def anchor_selection_with_grand_model(self, ts_with_los_prediction, los=1, in_2d=False):
+        '''try smth like if GM not ready, use simple anchor sel.
+        as soon it is ready, use this filter'''
+        if len(self.pred_from_grand_model) == 0:
+            return self.simple_anchor_selection_filter(
+                ts_with_los_prediction, in_2d=in_2d)
+        else:
+            self.anchor_selection_name = '_grand_model_anch_sel'
+            number_of_anchors_for_pos_estimation = 3
+            A_n = self.anchor_postion_list
+            # self.processed_anchors_data = np.c_[
+            #     raw_anchors_data[:, :-(self.number_of_features)], self.pred_from_detection]
+            'change ml predictions to grand model predictions'
+            ts_with_los_prediction = np.c_[
+                ts_with_los_prediction[:, :-1], self.pred_from_grand_model[0]]#
+            los_anchors, nlos_anchors = self.los_nlos_divider(
+                ts_with_los_prediction)
+            if len(los_anchors) >= number_of_anchors_for_pos_estimation:
+                ts_with_A_n = get_ts_with_An(los_anchors, A_n)
+            else:
+                np.random.shuffle(nlos_anchors)
+                los_anchors = np.concatenate(
+                    [los_anchors, nlos_anchors], axis=0)[:3, :]
+                ts_with_A_n = get_ts_with_An(los_anchors, A_n)
+            return self.get_position(ts_with_A_n, in_2d)
+
     def publish(self, save_data=False, still=True, median=True, moving_tag=True):
         'first is filtered and second is original'
         # ts_with_pred = test.simple_timestamp_filter(median=median)
-        ts_with_pred = test.std_ts_filter(median=median)
+        ts_with_pred = self.std_ts_filter(median=median)
         # filtered = test.get_position(
         #     (ts_with_pred[:, 1:], self.anchor_postion_list), in_2d=True)
         # filtered = test.improved_anchor_selection_filter(
         #     ts_with_pred, in_2d=True)
-        filtered = test.simple_anchor_selection_filter(
+        filtered = self.simple_anchor_selection_filter(
             ts_with_pred, in_2d=True)
-        original = test.get_position(
+        original = self.get_position(
             (self.vanilla_ts[:, 1:], self.anchor_postion_list), in_2d=True)
         # print(filtered)
         # print(original)
@@ -444,56 +470,62 @@ class NLOS_detection_and_Mitigation:
                 raise exception('done')
 
         self.client.publish('positions', payload_)
-        if len(self.pred_from_grand_model)!= 0:
-            det_mitig_data_grand_model = np.concatenate([self.pred_from_detection, self.pred_from_mitigation, self.pred_from_grand_model[0]], axis=0)
-            
-            self.grand_model_data = np.append(self.grand_model_data, np.expand_dims(
-                det_mitig_data_grand_model, axis=0), axis=0)
-            print(
-                f'filt {filtered[0]} shape is {self.grand_model_data.shape} \t\t {det_mitig_data_grand_model}')  # {self.pred_from_grand_model}
-            if len(self.grand_model_data) == self.data_size:
-                columns_ = ['det1', 'det2', 'det3', 'mit1', 'mit2', 'mit3', 'grand1', 'grand2', 'grand3']
-                
-                grand_model_test = pd.DataFrame(self.grand_model_data, columns=columns_)
-                grand_model_test.to_csv('grand_model_test_data_all_anchors.csv', index=False)
-                print(
-                    f'data saved! shape is>>>>>>>>>>>> {self.grand_model_data.shape}')
-                raise exception('done')
+        # if len(self.pred_from_grand_model) != 0:
+        #     det_mitig_data_grand_model = np.concatenate(
+        #         [self.pred_from_detection, self.pred_from_mitigation, self.pred_from_grand_model[0]], axis=0)
 
-        else:
-            print(f'grand model is training! {np.concatenate([self.pred_from_detection, self.pred_from_mitigation], axis=0)}')
+        #     self.grand_model_data = np.append(self.grand_model_data, np.expand_dims(
+        #         det_mitig_data_grand_model, axis=0), axis=0)
+        #     print(
+        #         f'filt {filtered[0]} shape is {self.grand_model_data.shape} \t\t {det_mitig_data_grand_model}')  # {self.pred_from_grand_model}
+        #     if len(self.grand_model_data) == self.data_size:
+        #         columns_ = ['det1', 'det2', 'det3', 'mit1',
+        #                     'mit2', 'mit3', 'grand1', 'grand2', 'grand3']
+
+        #         grand_model_test = pd.DataFrame(
+        #             self.grand_model_data, columns=columns_)
+        #         grand_model_test.to_csv(
+        #             'grand_model_test_data_all_anchors.csv', index=False)
+        #         print(
+        #             f'data saved! shape is>>>>>>>>>>>> {self.grand_model_data.shape}')
+        #         raise exception('done')
+
+        # else:
+        #     print(
+        #         f'grand model is training! {np.concatenate([self.pred_from_detection, self.pred_from_mitigation], axis=0)}')
+
 
 if __name__ == "__main__":
 
     A_n1 = np.array([[2], [0], [1]])
     A_n2 = np.array([[5], [2.3], [1]])
     A_n3 = np.array([[0], [3], [1]])  # master
-    # A_n4 = np.array([[3], [5], [1]])
+    A_n4 = np.array([[3], [5], [1]])
     # A_n5 = np.array([[2], [5], [4]])
-    # anchors_pos = np.array([A_n1, A_n2, A_n3, A_n4, A_n5])
-    anchors_pos = np.array([A_n1, A_n2, A_n3])
+    anchors_pos = np.array([A_n1, A_n2, A_n3, A_n4])
+    # anchors_pos = np.array([A_n1, A_n2, A_n3])
     # print(A_n1.shape)
     test = NLOS_detection_and_Mitigation(anchor_postion_list=anchors_pos)
-    test.set_data_size(200)#200
+    test.set_data_size(200)  # 200
     while True:
         'testing'
-        time.sleep(0.2)
-        # test.anomaly_detection()
-        test.pca_k_means_model_or_gmm(k_means=False)
-        test.publish(save_data=False, still=True,
-                     median=True, moving_tag=False)
-        '''notes for me: find good threshold for anomaly, too much nlos detection leads for erros
-        because we r putting median/avrg value'''
+        time.sleep(0.1)
+        test.anomaly_detection()
+        # test.pca_k_means_model_or_gmm(k_means=False)
+        # test.publish(save_data=False, still=True,
+        #              median=True, moving_tag=False)
+        ts_with_pred = test.std_ts_filter()
+        pos = test.anchor_selection_with_grand_model(ts_with_pred, in_2d=True)
+
         # print(test.threshold)
         # print(test.vanilla_ts)
-        # ts_with_pred = test.std_ts_filter()
         # ts_with_pred = test.simple_timestamp_filter()
         # pos = test.get_position(
         #     (test.vanilla_ts[:, 1:], anchors_pos), in_2d=True)
         # pos = test.smart_anchor_selection_filter(
         #     ts_with_pred, in_2d=True)
 
-        # print(pos)
+        print(pos)
 
         'with grand model'
         # time.sleep(0.1)

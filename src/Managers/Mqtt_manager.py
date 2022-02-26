@@ -81,7 +81,7 @@ if __name__ == "__main__":
                 test.publish('topic/1', f'1"[4, {count}, {65553000 + np.random.randint(0, 400)}, -78.7,{4+np.random.randint(-3, 3)},{np.random.randint(30, 70)},{5+np.random.randint(-2, 2)},0.75]') #rssi, rx diff, std noise, pmr,snr
                 test.publish('topic/2', f'2"[4, {count}, {65554200 + np.random.randint(0, 500)}, -78.7,{4+np.random.randint(-3, 3)},{np.random.randint(30, 70)},{5+np.random.randint(-2, 2)},0.75]') #rssi, rx diff, std noise, pmr,snr
                 test.publish('topic/3', f'3"[4, {count}, {65553700 + np.random.randint(0, 200)}, -78.7,{4+np.random.randint(-3, 3)},{np.random.randint(30, 70)},{5+np.random.randint(-2, 2)},0.75]') #rssi, rx diff, s1td noise, pmr,snr
-                # test.publish('topic/4', f'4"[4, {count}, {65549343+np.random.randint(-100,100)}, -80,11,50,{num},-1.2]') #rssi, rx diff, std noise, pmr,snr
+                test.publish('topic/4', f'4"[4, {count}, {65553700 + np.random.randint(0, 200)}, -85.7,{4+np.random.randint(10, 15)},{np.random.randint(20, 30)},{5+np.random.randint(-2, 2)},0.75]') #rssi, rx diff, s1td noise, pmr,snr
                 # test.publish('topic/5', f'5"[4, {count}, {65549343+np.random.randint(-100,100)}, -80,11,50,{num},-1.2]') #rssi, rx diff, std noise, pmr,snr
                 
                 "data for position"
