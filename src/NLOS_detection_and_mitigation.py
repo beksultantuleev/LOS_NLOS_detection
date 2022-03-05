@@ -415,23 +415,10 @@ class NLOS_detection_and_Mitigation:
                 ts_with_los_prediction, in_2d=in_2d)
         else:
             self.anchor_selection_name = '_grand_model_anch_sel'
-            number_of_anchors_for_pos_estimation = 3
-            A_n = self.anchor_postion_list
-            # self.processed_anchors_data = np.c_[
-            #     raw_anchors_data[:, :-(self.number_of_features)], self.pred_from_detection]
             'change ml predictions to grand model predictions'
             ts_with_los_prediction = np.c_[
-                ts_with_los_prediction[:, :-1], self.pred_from_grand_model[0]]#
-            los_anchors, nlos_anchors = self.los_nlos_divider(
-                ts_with_los_prediction)
-            if len(los_anchors) >= number_of_anchors_for_pos_estimation:
-                ts_with_A_n = get_ts_with_An(los_anchors, A_n)
-            else:
-                np.random.shuffle(nlos_anchors)
-                los_anchors = np.concatenate(
-                    [los_anchors, nlos_anchors], axis=0)[:3, :]
-                ts_with_A_n = get_ts_with_An(los_anchors, A_n)
-            return self.get_position(ts_with_A_n, in_2d)
+                ts_with_los_prediction[:, :-1], self.pred_from_grand_model[0]]
+            return self.improved_anchor_selection_filter(ts_with_los_prediction, los=los, in_2d=in_2d)
 
     def publish(self, save_data=False, still=True, median=True, moving_tag=True):
         'first is filtered and second is original'

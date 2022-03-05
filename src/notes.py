@@ -12,66 +12,50 @@ from keras.models import load_model
 from Core_functions.hub_of_functions import value_extractor
 import pandas as pd
 from scipy.spatial.distance import cdist
-from scipy.spatial import ConvexHull
+from matplotlib import pyplot as plt
+from matplotlib.pyplot import figure
 
+data = pd.read_csv(
+    'data/filtered_vs_original_data/still_comp_anomaly_simple_filter_median_smpl_anch_sel_200.csv', names=['x1', 'y1', 'x2', 'y2'])
+plt.style.use('bmh')
+ground_x = data['x2'].median()
+ground_y = data['y2'].median()
+data['error_original'] = ((data['x2'] - ground_x) **
+                          2 + (data['y2'] - ground_y)**2)**(1/2)
+data['error_filtered'] = ((data['x1'] - ground_x) **
+                          2 + (data['y1'] - ground_y)**2)**(1/2)
+figure(dpi=150)
+plt.plot(data['error_original'], color='red', linestyle=":",
+         alpha=1, label=f"Original {data['error_original'].mean():.3f}")
+plt.plot(data['error_filtered'], color='g', linestyle="-",
+         alpha=0.7, label=f"Filtered {data['error_filtered'].mean():.3f}")
+plt.ylabel("Error (m)")
+title = 'this is title'
+plt.xlabel(f'Samples\n{title}')
+#table data
+filtered_error = list(data['error_filtered'].describe().values)
+original_error = list(data['error_original'].describe().values)
+'rounding'
+filtered_error = np.around(filtered_error, 3)[1:]
+original_error = np.around(original_error, 3)[1:]
 
-# lis = np.array([[10,15,3], [10,14,20], [5,14,21]])
-# print(lis)
-# print(np.mean(lis, axis=0))
-# print(np.median(lis, axis=0))
+cell_text = np.array([filtered_error, original_error]).T
+rows = list(data['error_original'].describe().keys())[1:]
+columns = ['Filtered', 'Original']
 
-lis = np.array([10, 10, 10, 10, 10, 100, 10, 3])
-# print(lis)
-# print(np.mean(lis, axis=0))
-# print(np.median(lis, axis=0))
-divider = int(len(lis)*0.4)
-print(divider)
-# print(lis[-divider:])
-'old filters'
-'still simple filters'
-# location = 'data/filtered_vs_original_data/still_comp__anomaly_simple_filter_smpl_anch_sel_300.csv'
-# location = 'data/filtered_vs_original_data/still_comp__k_means_simple_filter_smpl_anch_sel_300.csv'
-# location = 'data/filtered_vs_original_data/still_comp__gmm_simple_filter_smpl_anch_sel_300.csv'
-'moving'
-'anomaly det'
-# location = 'data/filtered_vs_original_data/move_comp_anomaly_simple_filter_median_smpl_anch_sel_300.csv'
-# location = 'data/filtered_vs_original_data/move_comp_anomaly_simple_filter_avrg_smpl_anch_sel_300.csv'
-'k means'
-# location = 'data/filtered_vs_original_data/move_comp_k_means_simple_filter_median_smpl_anch_sel_300.csv'
-# location = 'data/filtered_vs_original_data/move_comp_k_means_simple_filter_avrg_smpl_anch_sel_300.csv'
-'gmm'
-# location = 'data/filtered_vs_original_data/move_comp_gmm_simple_filter_median_smpl_anch_sel_300.csv'
-# location = 'data/filtered_vs_original_data/move_comp_gmm_simple_filter_avrg_smpl_anch_sel_300.csv'
+the_table = plt.table(cellText=cell_text,
+                      rowLabels=rows,
+                      colLabels=columns,
+                      loc='top',
+                      cellLoc='center',
+                    #   colWidths=[0.1] * 3,
+                      )
 
-"still std filter"
-'anomaly'
-# location = 'data/filtered_vs_original_data/still_comp_anomaly_std_fltr_median_smpl_anch_sel_300.csv'
-# location = 'data/filtered_vs_original_data/still_comp_anomaly_std_fltr_avrg_smpl_anch_sel_300.csv'
-'kmeans'
-# location = 'data/filtered_vs_original_data/still_comp_k_means_std_fltr_median_smpl_anch_sel_300.csv'
-# location = 'data/filtered_vs_original_data/still_comp_k_means_std_fltr_avrg_smpl_anch_sel_300.csv'
-'gmm'
-# location = 'data/filtered_vs_original_data/still_comp_gmm_std_fltr_median_smpl_anch_sel_300.csv'
-# location = 'data/filtered_vs_original_data/still_comp_gmm_std_fltr_avrg_smpl_anch_sel_300.csv'
-'move'
-'anomaly'
-# location = 'data/filtered_vs_original_data/move_comp_anomaly_std_fltr_median_smpl_anch_sel_300.csv'
-# location = 'data/filtered_vs_original_data/move_comp_anomaly_std_fltr_avrg_smpl_anch_sel_300.csv'
-'k means'
-# location = 'data/filtered_vs_original_data/move_comp_k_means_std_fltr_median_smpl_anch_sel_300.csv'
-# location = 'data/filtered_vs_original_data/move_comp_k_means_std_fltr_avrg_smpl_anch_sel_300.csv'
-'gmm'
-# location = 'data/filtered_vs_original_data/move_comp_gmm_std_fltr_median_smpl_anch_sel_300.csv'
-# location = 'data/filtered_vs_original_data/move_comp_gmm_std_fltr_avrg_smpl_anch_sel_300.csv'
+plt.subplots_adjust(left=0.2, bottom=-0.3)
+plt.tight_layout()
+# plt.xticks([])
+plt.legend()
+the_table.scale(1, 3)
+plt.show()
+# plt.savefig('test.png')
 
-"move imp anchor sel, std filt"
-'anomaly'
-# location = 'data/filtered_vs_original_data/move_comp_anomaly_std_fltr_median_imp_anch_sel_300.csv'
-# location = 'data/filtered_vs_original_data/move_comp_anomaly_std_fltr_avrg_imp_anch_sel_300.csv'
-'k means'
-# location = 'data/filtered_vs_original_data/move_comp_k_means_std_fltr_median_imp_anch_sel_300.csv'
-# location = 'data/filtered_vs_original_data/move_comp_k_means_std_fltr_avrg_imp_anch_sel_300.csv'
-'gmm'
-'bad'
-# location = 'data/filtered_vs_original_data/move_comp_gmm_std_fltr_median_imp_anch_sel_300.csv'
-# location = 'data/filtered_vs_original_data/move_comp_gmm_std_fltr_avrg_imp_anch_sel_300.csv'

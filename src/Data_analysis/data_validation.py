@@ -15,8 +15,8 @@ import seaborn as sns
 to validate data and plot confusion matrix, ROC and PRC
 '''
 "control here"
-plot_cm = True
-plot_roc_prc = True
+plot_cm = False
+plot_roc_prc = False
 
 
 'select data'
@@ -43,7 +43,7 @@ x_train, x_test, y_train, y_test = train_test_split(
 autoencoder = load_model('trained_models/anomaly_detection_model')
 path = 'src/Training/logs/anomaly_detection/logs_Single_data_input.txt'
 
-threshold = value_extractor("Threshold:", path)
+threshold = 0.01#value_extractor("Threshold:", path)
 min_val = value_extractor("Min_val:", path)
 max_val = value_extractor("Max_val:", path)
 df_anomaly = (x_train.values -
