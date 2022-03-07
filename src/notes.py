@@ -51,11 +51,11 @@ the_table = plt.table(cellText=cell_text,
                     #   colWidths=[0.1] * 3,
                       )
 
-plt.subplots_adjust(left=0.2, bottom=-0.3)
+plt.subplots_adjust(left=0.2, bottom=-0.32)
 plt.tight_layout()
 # plt.xticks([])
 plt.legend()
-the_table.scale(1, 3)
-plt.show()
+the_table.scale(1, 3.3)
+# plt.show()
 # plt.savefig('test.png')
 

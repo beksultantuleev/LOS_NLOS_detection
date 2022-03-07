@@ -119,11 +119,11 @@ for k, location in dict_of_locations.items():
                         #   colWidths=[0.5] * 2,
                         )
 
-    plt.subplots_adjust(left=0.2, bottom=-0.2)
+    plt.subplots_adjust(left=0.2, bottom=-0.32)
     plt.tight_layout()
     # plt.xticks([])
     plt.legend()
-    the_table.scale(1, 2.5)
+    the_table.scale(1, 3.3)
     plt.savefig(
         f"src/Data_analysis/plot_data/position_plot_fitered_original/error_stat_{k}.png")
     plt.close()
